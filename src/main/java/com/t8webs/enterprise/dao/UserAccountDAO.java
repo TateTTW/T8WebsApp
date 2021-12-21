@@ -47,8 +47,9 @@ public class UserAccountDAO extends BaseDAO implements IUserAccountDAO {
         addWhere("username", username);
         List<UserAccount> users = parse(select());
 
-        if(users.isEmpty())
-            return null;
+        if(users.isEmpty()){
+            return new UserAccount();
+        }
 
         return users.get(0);
     }
@@ -107,6 +108,7 @@ public class UserAccountDAO extends BaseDAO implements IUserAccountDAO {
             userAccount.setBirthDate((Timestamp) valuesMap.get("birthdate"));
             userAccount.setLastLogin((Timestamp) valuesMap.get("lastLogin"));
             userAccount.setToken((String) valuesMap.get("token"));
+            userAccount.setFound(true);
             userAccounts.add(userAccount);
         }
         return userAccounts;

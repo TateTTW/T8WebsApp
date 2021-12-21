@@ -50,7 +50,7 @@ public interface IUserAccountService {
      * Updates the token and lastLogin for a UserAccount
      *
      * @param userAccount UserAccount object to create a new valid token for
-     * @return UserAccount object containing a valid token
+     * @return String object containing a valid token
      */
-    UserAccount updateUserToken(UserAccount userAccount) throws SQLException, IOException, ClassNotFoundException;
+    String updateUserToken(UserAccount userAccount) throws SQLException, IOException, ClassNotFoundException;
 }

@@ -72,8 +72,9 @@ public class UserAccountService implements IUserAccountService {
     @Override
     @Cacheable(value="userAccount", key="#username")
     public UserAccount fetchUserAccount(String username) throws SQLException, IOException, ClassNotFoundException {
-        if(username == null)
-            return null;
+        if(username == null){
+            return new UserAccount();
+        }
 
         return userAccountDAO.fetch(username);
     }
@@ -87,7 +88,7 @@ public class UserAccountService implements IUserAccountService {
      */
     @Override
     public boolean isTokenValid(UserAccount userAccount, String token) throws SQLException, IOException, ClassNotFoundException {
-        if(userAccount == null || userAccount.getToken() == null || userAccount.getLastLogin() == null)
+        if(userAccount == null || !userAccount.isFound() || userAccount.getToken() == null || userAccount.getLastLogin() == null)
             return false;
 
         if(!userAccount.getToken().equals(token))
@@ -109,9 +110,10 @@ public class UserAccountService implements IUserAccountService {
      */
     @Override
     @CachePut(value="userAccount", key="#userAccount.username")
-    public UserAccount updateUserToken(UserAccount userAccount) throws SQLException, IOException, ClassNotFoundException {
-        if(userAccount == null)
-            return null;
+    public String updateUserToken(UserAccount userAccount) throws SQLException, IOException, ClassNotFoundException {
+        if(userAccount == null){
+            return "";
+        }
 
         String token = generateNewToken();
         userAccount.setToken(token);
@@ -120,10 +122,10 @@ public class UserAccountService implements IUserAccountService {
         boolean success = userAccountDAO.update(userAccount);
 
         if(success) {
-            return userAccount;
+            return userAccount.getToken();
         }
 
-        return null;
+        return "";
     }
 
     /**

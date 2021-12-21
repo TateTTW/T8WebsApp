@@ -5,7 +5,6 @@ import lombok.Data;
 import java.sql.Timestamp;
 
 @Data
-
 public class UserAccount {
     /**
      * UserAccount's unique identifier
@@ -14,6 +13,7 @@ public class UserAccount {
     private String password;
     private String email;
     private Timestamp birthDate;
+    private boolean isFound;
     /**
      * Random generated character string used for authentication
      */
