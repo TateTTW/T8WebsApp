@@ -19,7 +19,16 @@ import java.util.List;
 @Repository
 @Profile("test")
 public class ServerDAOStub implements IServerDAO {
-    HashMap<Integer, Server> servers = new HashMap<Integer, Server>();
+    private static HashMap<Integer, Server> servers;
+    static {
+        servers = new HashMap<>();
+        Server server = new Server();
+        server.setVmid(222);
+        server.setFound(true);
+        server.setUsername("");
+        server.setName("");
+        servers.put(222, server);
+    }
     /**
      * Method for creating a new Server record in the database
      *

@@ -36,19 +36,25 @@ public class UserAccountService implements IUserAccountService {
     @Override
     @CachePut(value="userAccount", key="#userAccount.username")
     public UserAccount createUserAccount(UserAccount userAccount) throws SQLException, IOException, ClassNotFoundException {
+        userAccount.setFound(false);
+
         String token = generateNewToken();
         userAccount.setToken(token);
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         userAccount.setLastLogin(timestamp);
 
-        boolean success = userAccountDAO.save(userAccount);
-
-        if(success) {
-            return userAccount;
+        if(userAccountConforms(userAccount)){
+            if(userAccountDAO.save(userAccount)) {
+                userAccount.setFound(true);
+            }
         }
 
-        return null;
+        return userAccount;
+    }
+
+    private boolean userAccountConforms(UserAccount userAccount) {
+        return userAccount.getUsername().length() > 8 && userAccount.getPassword().length() > 8;
     }
 
     /**

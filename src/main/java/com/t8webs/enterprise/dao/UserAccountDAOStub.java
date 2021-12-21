@@ -15,7 +15,7 @@ import java.util.HashMap;
 @Repository
 @Profile("test")
 public class UserAccountDAOStub implements IUserAccountDAO {
-    HashMap<String, UserAccount> userAccounts = new HashMap<String, UserAccount>();
+    private static HashMap<String, UserAccount> userAccounts = new HashMap<String, UserAccount>();
 
     /**
      * Method for creating a new UserAccount record in the database

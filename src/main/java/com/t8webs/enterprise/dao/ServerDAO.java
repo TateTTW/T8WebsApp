@@ -1,15 +1,17 @@
 package com.t8webs.enterprise.dao;
 
 import com.t8webs.enterprise.dto.Server;
-import com.t8webs.enterprise.dto.UserAccount;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@Repository
+@Profile("dev")
 public class ServerDAO extends BaseDAO implements IServerDAO {
     public ServerDAO() {
         super.setTableName("Server");
