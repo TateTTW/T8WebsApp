@@ -38,6 +38,12 @@ public interface IServerDAO {
     Server fetch(String name) throws SQLException, IOException, ClassNotFoundException;
 
     /**
+     * Method for fetching an unassigned server
+     * @return Server available to be assigned
+     */
+    Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException;
+
+    /**
      * Method for checking whether a record exists for the given server name
      *
      * @param name String uniquely identifying a server by name

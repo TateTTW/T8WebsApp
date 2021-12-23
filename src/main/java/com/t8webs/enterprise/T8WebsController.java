@@ -1,7 +1,6 @@
 package com.t8webs.enterprise;
 
 import com.t8webs.enterprise.dto.UserAccount;
-import com.t8webs.enterprise.service.IDomainService;
 import com.t8webs.enterprise.service.IServerService;
 import com.t8webs.enterprise.service.IUserAccountService;
 import org.springframework.beans.factory.annotation.Autowired;

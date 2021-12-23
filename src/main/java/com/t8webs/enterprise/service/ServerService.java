@@ -5,6 +5,8 @@ import com.t8webs.enterprise.dao.IServerDAO;
 import com.t8webs.enterprise.dao.IUserAccountDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.dto.UserAccount;
+import com.t8webs.enterprise.utils.DomainUtil;
+import com.t8webs.enterprise.utils.ReverseProxyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +22,6 @@ public class ServerService implements IServerService {
     IServerDAO serverDA0;
     @Autowired
     IUserAccountDAO userAccountDAO;
-    @Autowired
-    IDomainService domainService;
 
     /**
      * @param userAccount UserAccount to assign a server to
@@ -34,19 +34,22 @@ public class ServerService implements IServerService {
             return false;
         }
 
-        List<Server> availableServers = serverDA0.fetchByUsername("");
-        if(availableServers.isEmpty()){
+        Server server = serverDA0.fetchAvailable();
+        if(!server.isFound()){
             return false;
         }
 
-        Server server = availableServers.get(0);
         server.setName(serverName.trim());
         server.setUsername(userAccount.getUsername());
 
         boolean assignedServer = serverDA0.update(server);
 
         if(assignedServer){
-            return domainService.createDomain(server.getName());
+            boolean proxyConfigured = ReverseProxyUtil.configServer(server);
+
+            if(proxyConfigured){
+                return DomainUtil.createDomain(server.getName());
+            }
         }
 
         return false;

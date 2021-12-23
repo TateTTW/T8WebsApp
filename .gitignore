@@ -34,3 +34,4 @@ build/
 
 ## Additional Files ##
 /src/main/resources/application.properties
+/src/main/resources/files/haproxy.cfg

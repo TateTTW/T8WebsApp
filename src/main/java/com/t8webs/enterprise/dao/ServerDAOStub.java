@@ -23,11 +23,11 @@ public class ServerDAOStub implements IServerDAO {
     static {
         servers = new HashMap<>();
         Server server = new Server();
-        server.setVmid(222);
+        server.setVmid(101);
         server.setFound(true);
         server.setUsername("");
         server.setName("");
-        servers.put(222, server);
+        servers.put(101, server);
     }
     /**
      * Method for creating a new Server record in the database
@@ -75,6 +75,22 @@ public class ServerDAOStub implements IServerDAO {
     public Server fetch(String name) throws SQLException, IOException, ClassNotFoundException {
         for(Server server: servers.values()){
             if(server.getName().equals(name)){
+                return server;
+            }
+        }
+
+        return new Server();
+    }
+
+    /**
+     * Method for fetching an unassigned server
+     *
+     * @return Server available to be assigned
+     */
+    @Override
+    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
+        for(Server server: servers.values()){
+            if(server.getName().isEmpty() && server.getUsername().isEmpty()){
                 return server;
             }
         }

@@ -41,7 +41,14 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
      */
     @Override
     public Server fetch(int vmid) throws SQLException, IOException, ClassNotFoundException {
-        return null;
+        addWhere("vmid", vmid);
+        List<Server> servers = parse(select());
+
+        if(servers.isEmpty()){
+            return new Server();
+        }
+
+        return servers.get(0);
     }
 
     /**
@@ -53,6 +60,25 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     @Override
     public Server fetch(String name) throws SQLException, IOException, ClassNotFoundException {
         addWhere("name", name);
+        List<Server> servers = parse(select());
+
+        if(servers.isEmpty()){
+            return new Server();
+        }
+
+        return servers.get(0);
+    }
+
+    /**
+     * Method for fetching an unassigned server
+     *
+     * @return Server available to be assigned
+     */
+    @Override
+    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
+        addWhere("name", "");
+        addWhere("username", "");
+
         List<Server> servers = parse(select());
 
         if(servers.isEmpty()){

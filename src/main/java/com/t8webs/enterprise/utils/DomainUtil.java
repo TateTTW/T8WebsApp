@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.service;
+package com.t8webs.enterprise.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 @Service
-public class DomainService implements IDomainService {
+public class DomainUtil {
 
     private static Properties properties;
     static {
@@ -31,8 +31,7 @@ public class DomainService implements IDomainService {
      * @return
      * @throws UnirestException
      */
-    @Override
-    public boolean removeDomain(String domainName) throws UnirestException {
+    public static boolean removeDomain(String domainName) throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.delete(properties.getProperty("domainDeleteURL") + domainName.trim())
                 .header("Authorization", properties.getProperty("ssoKey"))
                 .header("Content-Type", "application/json")
@@ -46,8 +45,7 @@ public class DomainService implements IDomainService {
      * @return
      * @throws UnirestException
      */
-    @Override
-    public boolean createDomain(String domainName) throws UnirestException {
+    public static boolean createDomain(String domainName) throws UnirestException {
         ObjectMapper mapper = new ObjectMapper();
 
         ArrayNode arrayNode = mapper.createArrayNode();
