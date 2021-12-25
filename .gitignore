@@ -32,6 +32,11 @@ build/
 ### VS Code ###
 .vscode/
 
-## Additional Files ##
+## Additional Ignore Files ##
 /src/main/resources/application.properties
 /src/main/resources/files/haproxy.cfg
+
+## Angular Ignore Dist
+/src/main/resources/static
+
+

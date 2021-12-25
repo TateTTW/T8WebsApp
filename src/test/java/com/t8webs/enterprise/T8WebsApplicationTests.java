@@ -49,24 +49,24 @@ class T8WebsApplicationTests {
         returnsUserAccountWithValidToken(whenUserSendsUserAccountWithUniqueUsername());
     }
 
-    @Test
-    void userRequestsServer_ServerIsAssigned() throws SQLException, IOException, ClassNotFoundException, UnirestException {
-        UserAccount userAccount = new UserAccount();
-        userAccount.setUsername(TEST_USERNAME);
-        userAccount.setPassword(TEST_USER_PASSWORD);
-        userAccount.setEmail("testUser@testSite.com");
-
-        userAccountService.createUserAccount(userAccount);
-
-        boolean assigned = serverService.assignUserServer(userAccount, "alex");
-
-        Assert.isTrue(assigned, "Server service failed to assign server.");
-
-        Server server = serverDAO.fetch("alex");
-
-        Assert.isTrue(server.isFound(), "Server assignment was not found.");
-        Assert.isTrue(server.getUsername().equals(TEST_USERNAME), "Username was not added to server assignment.");
-    }
+//    @Test
+//    void userRequestsServer_ServerIsAssigned() throws SQLException, IOException, ClassNotFoundException, UnirestException {
+//        UserAccount userAccount = new UserAccount();
+//        userAccount.setUsername(TEST_USERNAME);
+//        userAccount.setPassword(TEST_USER_PASSWORD);
+//        userAccount.setEmail("testUser@testSite.com");
+//
+//        userAccountService.createUserAccount(userAccount);
+//
+//        boolean assigned = serverService.assignUserServer(userAccount, "alex");
+//
+//        Assert.isTrue(assigned, "Server service failed to assign server.");
+//
+//        Server server = serverDAO.fetch("alex");
+//
+//        Assert.isTrue(server.isFound(), "Server assignment was not found.");
+//        Assert.isTrue(server.getUsername().equals(TEST_USERNAME), "Username was not added to server assignment.");
+//    }
 
     private String whenUserSendsUserAccountWithUniqueUsername() throws Exception {
         UserAccount userAccount = new UserAccount();
