@@ -1,0 +1,17 @@
+<div class="control-section">
+  <div class="toolbar-menu-control">
+    <div id="loginandout">
+      <button *ngIf="!user" ejs-button (click)="login()">Log In</button>
+      <button *ngIf="user" ejs-dropdownbutton (select)="userMenuSelect($event)" [items]="userMenuItems" [title]="user.name">
+        <img class="userPic" [src]="user.picture"/>
+      </button>
+    </div>
+    <div id='menu'><ejs-menu [items]='menuItems' [animationSettings]='animationSettings' (select)='menuSelect($event)'></ejs-menu></div>
+    <ejs-toolbar id="shoppingtoolbar" #toolbar (created)='created()'>
+      <e-items>
+        <e-item template='#menu'></e-item>
+        <e-item template='#loginandout' align='Right'></e-item>
+      </e-items>
+    </ejs-toolbar>
+  </div>
+</div>

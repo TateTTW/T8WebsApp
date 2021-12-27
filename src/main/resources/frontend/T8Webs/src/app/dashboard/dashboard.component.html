@@ -1,5 +1,16 @@
-<div>
-  <h1>dashboard works!</h1>
-  <button ejs-button (click)="assignServer()">Assign Server</button>
-  <ejs-checkbox label="test"></ejs-checkbox>
+<div class="container">
+  <div fxLayout="row">
+    <div fxFlex="15">
+      <div class="logoDiv">
+        <div class="logoBorder">
+          <img id="logo" src="../../assets/T8WEBSICON.png"/>
+        </div>
+      </div>
+      <dashboard-tree (openAddServer)="this.addServerDialog.dialog.show()"></dashboard-tree>
+    </div>
+    <div fxFlex="85">
+      <dashboard-toolbar></dashboard-toolbar>
+    </div>
+    <add-server-dialog #addServerDialog></add-server-dialog>
+  </div>
 </div>

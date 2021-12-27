@@ -1,6 +1,7 @@
 package com.t8webs.enterprise;
 
-import com.t8webs.enterprise.dto.UserAccount;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.service.IServerService;
 import com.t8webs.enterprise.service.IUserAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,75 +9,46 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
-@Controller
+@RestController
 public class T8WebsController {
     @Autowired
     IUserAccountService userAccountService;
     @Autowired
     IServerService serverService;
 
-    @RequestMapping("/")
-    public String index(HttpServletResponse response) {
-        return "start";
+    private ObjectMapper mapper = new ObjectMapper();
+
+    @GetMapping(value="/user", produces="application/json")
+    public ResponseEntity getUser(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ObjectNode jsonNode = mapper.createObjectNode();
+        jsonNode.put("name", (String) user.getAttribute("given_name"));
+        jsonNode.put("picture", (String) user.getAttribute("picture"));
+
+        return new ResponseEntity(jsonNode, headers, HttpStatus.OK);
     }
 
-    /**
-     * Create a new user account record from the user account data provided.
-     *
-     * Returns one of the following status codes:
-     * 201: successfully created a user account.
-     * 409: unable to create a user account, because username already exists in the database.
-     * 500: SQL Database error occurred.
-     *
-     * @param userAccount a JSON representation of a UserAccount object
-     * @return a valid user token for session authentication
-     */
-    @PostMapping(value="/signUp", consumes="application/json", produces="application/json")
-    public ResponseEntity signUpUser(@RequestBody UserAccount userAccount) {
+    @GetMapping(value="/addServer", produces="application/json")
+    public ResponseEntity addServer(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="serverName") String serverName) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
-            if (userAccountService.userAccountExists(userAccount)) {
-                return new ResponseEntity(headers, HttpStatus.CONFLICT);
-            }
 
-            userAccount = userAccountService.createUserAccount(userAccount);
+            //UserAccount userAccount = userAccountService.fetchUserAccount(user.getAttribute("email"));
 
-        } catch (Exception e) {
-            return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        if (!userAccount.isFound() || userAccount.getToken() == null || userAccount.getToken().isEmpty()) {
-            return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return new ResponseEntity(userAccount.getToken(), headers, HttpStatus.CREATED);
-    }
-
-    @PutMapping(value="/assignServer", consumes="application/json", produces="application/json")
-    public ResponseEntity assignServer(@RequestParam(value="serverName") String servername, @RequestParam(value="username") String username, @RequestParam(value="token") String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        try {
-            // authenticate request
-            if (isTokenInvalid(username, token)) {
-                return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
-            }
-
-            UserAccount userAccount = userAccountService.fetchUserAccount(username);
-
-            if (!serverService.assignUserServer(userAccount, servername)) {
-                return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
-            }
+//            if (!serverService.assignUserServer(userAccount, servername)) {
+//                return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
+//            }
 
         } catch (Exception e) {
             return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);

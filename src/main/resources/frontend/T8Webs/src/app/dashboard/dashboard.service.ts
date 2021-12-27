@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from "@angular/common/http";
 import {Observable, throwError} from "rxjs";
 import {catchError} from "rxjs/operators";
-import { HttpHeaders } from '@angular/common/http';
+import {User} from "./dto/user";
 
 @Injectable({
   providedIn: 'root'
@@ -46,10 +46,15 @@ export class DashboardService {
     return httpParams;
   }
 
-  assignServer(serverName: string): Observable<any> {
-    const url = '/assignServer';
+  addServer(serverName: string): Observable<any> {
+    const url = '/addServer';
     const params = {serverName: serverName};
     const options = { params: this.createHttpParams(params)};
-    return this.putData(url, options);
+    return this.getData(url, options);
+  }
+
+  getUser(): Observable<User> {
+    const url = '/user';
+    return this.getData(url, undefined);
   }
 }

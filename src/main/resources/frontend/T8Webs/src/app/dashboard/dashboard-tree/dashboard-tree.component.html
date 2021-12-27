@@ -1,0 +1,5 @@
+<div>
+  <ejs-treeview #treeView id="tree" cssClass="tree" [fields]="treeFields" (nodeClicked)='nodeClicked($event)'></ejs-treeview>
+  <ejs-contextmenu #contextMenu id='contextMenu' target='#tree' [items]='contextMenuItems' (beforeOpen)='beforeOpen($event)' (select)='menuClick($event)'></ejs-contextmenu>
+</div>
+
