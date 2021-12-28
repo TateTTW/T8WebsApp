@@ -1,16 +1,16 @@
-<div class="container">
+<div id="spinnerDiv" class="container">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
   <div fxLayout="row">
     <div fxFlex="15">
-      <div class="logoDiv">
-        <div class="logoBorder">
-          <img id="logo" src="../../assets/T8WEBSICON.png"/>
-        </div>
-      </div>
-      <dashboard-tree (openAddServer)="this.addServerDialog.dialog.show()"></dashboard-tree>
+      <dashboard-tree
+        (nodeSelection)="nodeSelection($event)"
+        (openAddServer)="openServerDialog($event)">
+      </dashboard-tree>
     </div>
     <div fxFlex="85">
-      <dashboard-toolbar></dashboard-toolbar>
+        <dashboard-toolbar [user]="user" [selectedTreeNode]="selectedTreeNode"></dashboard-toolbar>
+        <homepage [inDashboard]="true" (retrievedUser)="setUser($event)"></homepage>
     </div>
-    <add-server-dialog #addServerDialog></add-server-dialog>
+    <server-dialog #serverDialog (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-dialog>
   </div>
 </div>

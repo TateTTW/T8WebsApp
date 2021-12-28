@@ -6,6 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FlexLayoutModule } from "@angular/flex-layout";
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // Syncfusion
 import { ButtonModule, CheckBoxModule } from "@syncfusion/ej2-angular-buttons";
@@ -19,7 +20,7 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 import { DashboardToolbarComponent } from './dashboard/dashboard-toolbar/dashboard-toolbar.component';
 import { DashboardTreeComponent } from './dashboard/dashboard-tree/dashboard-tree.component';
-import { AddServerDialogComponent } from './dashboard/add-server-dialog/add-server-dialog.component';
+import { ServerDialogComponent } from './dashboard/server-dialog/server-dialog.component';
 
 @NgModule({
   declarations: [
@@ -29,7 +30,7 @@ import { AddServerDialogComponent } from './dashboard/add-server-dialog/add-serv
     PageNotFoundComponent,
     DashboardToolbarComponent,
     DashboardTreeComponent,
-    AddServerDialogComponent
+    ServerDialogComponent
   ],
   imports: [
     FlexLayoutModule,
@@ -44,7 +45,9 @@ import { AddServerDialogComponent } from './dashboard/add-server-dialog/add-serv
     ToolbarModule,
     MenuModule,
     ContextMenuModule,
-    DialogModule
+    DialogModule,
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

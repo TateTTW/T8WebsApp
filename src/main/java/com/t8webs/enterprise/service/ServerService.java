@@ -2,9 +2,7 @@ package com.t8webs.enterprise.service;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.t8webs.enterprise.dao.IServerDAO;
-import com.t8webs.enterprise.dao.IUserAccountDAO;
 import com.t8webs.enterprise.dto.Server;
-import com.t8webs.enterprise.dto.UserAccount;
 import com.t8webs.enterprise.utils.DomainUtil;
 import com.t8webs.enterprise.utils.ReverseProxyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,37 +18,35 @@ import java.util.regex.Pattern;
 public class ServerService implements IServerService {
     @Autowired
     IServerDAO serverDA0;
-    @Autowired
-    IUserAccountDAO userAccountDAO;
 
     /**
-     * @param userAccount UserAccount to assign a server to
+     * @param username    String user to assign a server to
      * @param serverName  String name to give server
      * @return
      */
     @Override
-    public boolean assignUserServer(UserAccount userAccount, String serverName) throws SQLException, IOException, ClassNotFoundException, UnirestException {
+    public boolean assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, UnirestException {
         if(!serverNameConforms(serverName) || serverDA0.existsBy(serverName.trim())){
             return false;
         }
 
-        Server server = serverDA0.fetchAvailable();
-        if(!server.isFound()){
-            return false;
-        }
-
-        server.setName(serverName.trim());
-        server.setUsername(userAccount.getUsername());
-
-        boolean assignedServer = serverDA0.update(server);
-
-        if(assignedServer){
-            boolean proxyConfigured = ReverseProxyUtil.configServer(server);
-
-            if(proxyConfigured){
-                return DomainUtil.createDomain(server.getName());
-            }
-        }
+//        Server server = serverDA0.fetchAvailable();
+//        if(!server.isFound()){
+//            return false;
+//        }
+//
+//        server.setName(serverName.trim());
+//        server.setUsername(username);
+//
+//        boolean assignedServer = serverDA0.update(server);
+//
+//        if(assignedServer){
+//            boolean proxyConfigured = ReverseProxyUtil.configServer(server);
+//
+//            if(proxyConfigured){
+//                return DomainUtil.createDomain(server.getName());
+//            }
+//        }
 
         return false;
     }
@@ -71,14 +67,14 @@ public class ServerService implements IServerService {
     }
 
     /**
-     * @param userAccount UserAccount tied to server
+     * @param username    String user assigned to server
      * @param vmid        int uniquely identifying the server
      * @param serverName  String to rename the server
      * @return
      */
     @Override
-    public boolean renameServer(UserAccount userAccount, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
-        List<Server> userServers= serverDA0.fetchByUsername(userAccount.getUsername());
+    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
+        List<Server> userServers= serverDA0.fetchByUsername(username);
 
         for(Server server: userServers){
             if(server.getVmid() == vmid){

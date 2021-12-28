@@ -1,5 +1,10 @@
-<div>
-  <ejs-treeview #treeView id="tree" cssClass="tree" [fields]="treeFields" (nodeClicked)='nodeClicked($event)'></ejs-treeview>
-  <ejs-contextmenu #contextMenu id='contextMenu' target='#tree' [items]='contextMenuItems' (beforeOpen)='beforeOpen($event)' (select)='menuClick($event)'></ejs-contextmenu>
+<div class="container">
+  <div class="logoDiv">
+    <div class="logoBorder">
+      <img id="logo" src="../../assets/T8WEBSICON.png"/>
+    </div>
+  </div>
+  <ejs-treeview #treeView id="tree" [fields]="treeFields" (nodeClicked)='nodeClicked($event)'></ejs-treeview>
+  <ejs-contextmenu #contextMenu target='#tree' [items]='contextMenuItems' (beforeOpen)='beforeOpen($event)' (select)='contextMenuClick($event)'></ejs-contextmenu>
 </div>
 

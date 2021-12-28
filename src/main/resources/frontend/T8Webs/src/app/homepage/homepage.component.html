@@ -1,4 +1,17 @@
-<div class="container">
-  <h1>Welcome to the Homepage</h1>
-  <a href="/logout">Logout</a>
+<div #container class="container" fxLayout="column" fxLayoutAlign="center center" >
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <div class="logoDiv">
+    <div class="logoBorder">
+      <img id="logo" src="../../assets/T8WEBSICON.png"/>
+    </div>
+  </div>
+  <div *ngIf="user">
+    <h3><i class="fa fa-chevron-right"></i> Welcome {{user?.name}}</h3>
+  </div>
+  <div *ngIf="user && !inDashboard">
+    <button ejs-button (click)="enterDashboard()"><i class="fa fa-server"></i> Enter Dashboard</button>
+  </div>
+  <div *ngIf="!user">
+    <button ejs-button (click)="signIn()"><i class="fa fa-google"></i> | Sign in with Google</button>
+  </div>
 </div>

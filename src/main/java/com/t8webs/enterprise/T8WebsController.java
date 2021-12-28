@@ -3,7 +3,6 @@ package com.t8webs.enterprise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.service.IServerService;
-import com.t8webs.enterprise.service.IUserAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,8 +17,6 @@ import java.sql.SQLException;
 
 @RestController
 public class T8WebsController {
-    @Autowired
-    IUserAccountService userAccountService;
     @Autowired
     IServerService serverService;
 
@@ -43,21 +40,11 @@ public class T8WebsController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
-
-            //UserAccount userAccount = userAccountService.fetchUserAccount(user.getAttribute("email"));
-
-//            if (!serverService.assignUserServer(userAccount, servername)) {
-//                return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
-//            }
-
+            serverService.assignUserServer(user.getAttribute("email"), serverName);
         } catch (Exception e) {
             return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return new ResponseEntity(headers, HttpStatus.OK);
-    }
-
-    private boolean isTokenInvalid(String username, String token) throws SQLException, IOException, ClassNotFoundException {
-        return !userAccountService.isTokenValid(userAccountService.fetchUserAccount(username), token);
     }
 }

@@ -1,73 +1,71 @@
-import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ToolbarComponent, MenuAnimationSettingsModel} from "@syncfusion/ej2-angular-navigations";
-import { ItemModel, MenuEventArgs } from '@syncfusion/ej2-angular-splitbuttons';
-import {DashboardService} from "../dashboard.service";
+import {AfterViewInit, Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {ToolbarComponent, ItemModel, ClickEventArgs} from "@syncfusion/ej2-angular-navigations";
+import {ItemModel as ButtonItemModel} from '@syncfusion/ej2-angular-splitbuttons';
 import {User} from "../dto/user";
-import {Subscription} from "rxjs";
+import {NodeType, TreeNode} from "../dashboard-tree/TreeNode";
+import {TemplateBinding} from "@angular/compiler";
 
 @Component({
   selector: 'dashboard-toolbar',
   templateUrl: './dashboard-toolbar.component.html',
   styleUrls: ['./dashboard-toolbar.component.less']
 })
-export class DashboardToolbarComponent implements OnInit, OnDestroy {
+export class DashboardToolbarComponent implements OnInit, AfterViewInit,OnChanges {
+  removedMenuItems: ItemModel[] = [];
   // View elements
-  @ViewChild('toolbar') toolbarObj?: ToolbarComponent;
-  // Subscriptions
-  private getUserSub: Subscription | undefined;
+  @ViewChild('toolbar') toolbar?: ToolbarComponent;
+  @ViewChild('loginAndOut') loginAndOut?: TemplateBinding;
+  //@ViewChild('title') title?: HTMLElement;
 
-  user: User | undefined;
+  private vmMenuItems = ["Start", "Stop", "Reboot"];
 
-  public userMenuItems: ItemModel[] = [
+  @Input() user: User | undefined;
+  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', NodeType.None);
+
+  public editMenuItems: ButtonItemModel[] = [
     {
-      text: 'Log Out'
-    }];
-
-
-  public menuItems: { [key: string]: Object }[] = [
-    {
-      text: 'Start'
+      text: 'Rename',
+      iconCss: 'fa fa-pencil'
     },
     {
-      text: 'Stop'
-    },
-    {
-      text: 'Reboot'
-    },
-    {
-      text: 'Rename'
+      text: 'Delete',
+      iconCss: 'fa fa-trash'
     }
   ];
+
+  public userMenuItems: ItemModel[] = [{text: 'Sign Out'}];
 
   public menuFields: Object = {
     text: ['header', 'text', 'value'],
     children: ['subItems', 'options']
   };
 
-  public animationSettings: MenuAnimationSettingsModel = { effect: 'None' };
+  constructor() { }
 
-  constructor(private dashboardService: DashboardService) { }
+  ngOnInit(): void { }
 
-  ngOnInit(): void {
-    this.getUserSub = this.dashboardService.getUser().subscribe(
-      data => this.user = data,
-      error => console.log(error)
-    )
-  }
+  ngAfterViewInit(): void { }
 
-  ngOnDestroy(): void {
-    this.getUserSub?.unsubscribe();
+  ngOnChanges(changes: SimpleChanges): void {
+    const selectedTreeNode = changes['selectedTreeNode'];
+    if(this.toolbar && selectedTreeNode && selectedTreeNode.currentValue) {
+      const nodeType = selectedTreeNode.currentValue.type;
+      const isGroup = nodeType === NodeType.ServerGroup || nodeType === NodeType.BalancerGroup;
+
+      let index = 0;
+      this.toolbar?.items.forEach((item: ItemModel) => {
+        if(item.cssClass === 'group'){
+          this.toolbar?.hideItem(index, !isGroup);
+        } else if (item.cssClass === 'item') {
+          this.toolbar?.hideItem(index, isGroup);
+        }
+        index++;
+      });
+    }
   }
 
   public created(): void {
-    this.toolbarObj?.refreshOverflow();
-  }
-
-  public menuSelect(args: MenuEventArgs): void {
-    switch (args.item.text) {
-
-    }
-    console.log(args.item.text);
+    this.toolbar?.refreshOverflow();
   }
 
   public userMenuSelect(args: Event): void {
@@ -80,5 +78,16 @@ export class DashboardToolbarComponent implements OnInit, OnDestroy {
 
   public logout() {
     window.location.replace("/logout");
+  }
+
+  toolbarClick(args: ClickEventArgs) {
+    switch (args.item.text) {
+      case "Start": console.log("Start");
+        break;
+    }
+  }
+
+  editSelect(args: ClickEventArgs) {
+    console.log(args.item.text);
   }
 }

@@ -1,16 +1,29 @@
 <div class="control-section">
+  <h4 #title id="title">{{this.selectedTreeNode.name}}</h4>
   <div class="toolbar-menu-control">
-    <div id="loginandout">
-      <button *ngIf="!user" ejs-button (click)="login()">Log In</button>
+    <div #loginAndOut id="loginAndOut">
+      <button *ngIf="!user" ejs-button (click)="login()"><i class="fa fa-google"></i> | Sign in</button>
       <button *ngIf="user" ejs-dropdownbutton (select)="userMenuSelect($event)" [items]="userMenuItems" [title]="user.name">
         <img class="userPic" [src]="user.picture"/>
       </button>
     </div>
-    <div id='menu'><ejs-menu [items]='menuItems' [animationSettings]='animationSettings' (select)='menuSelect($event)'></ejs-menu></div>
-    <ejs-toolbar id="shoppingtoolbar" #toolbar (created)='created()'>
+    <div id="editSubmenu">
+      <button #editSubmenu ejs-dropdownbutton (select)="editSelect($event)" [items]="editMenuItems">
+        <i class="fa fa-gear"></i>Edit
+      </button>
+    </div>
+    <ejs-toolbar id="shoppingtoolbar" #toolbar (clicked)="toolbarClick($event)" (created)='created()'>
       <e-items>
-        <e-item template='#menu'></e-item>
-        <e-item template='#loginandout' align='Right'></e-item>
+          <e-item prefixIcon="fa fa-plus" text="Add" cssClass="group" [visible]="false"></e-item>
+<!--        <e-item type='Separator' cssClass="group"></e-item>-->
+          <e-item prefixIcon="fa fa-play" text="Start" cssClass="item" [visible]="false"></e-item>
+        <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
+          <e-item prefixIcon="fa fa-stop" text="Stop" cssClass="item" [visible]="false"></e-item>
+        <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
+          <e-item prefixIcon="fa fa-refresh" text="Reboot" cssClass="item" [visible]="false"></e-item>
+        <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
+          <e-item template='#editSubmenu' cssClass="item" [visible]="false"></e-item>
+        <e-item template='#loginAndOut' align="Right" cssClass="persist"></e-item>
       </e-items>
     </ejs-toolbar>
   </div>

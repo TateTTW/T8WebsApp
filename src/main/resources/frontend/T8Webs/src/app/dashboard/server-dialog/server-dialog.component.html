@@ -1,0 +1,24 @@
+<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" width='333px' zIndex="500">
+  <form [formGroup]="formGroup">
+    <div *ngIf="errors['minlength']">
+      <label>* Name must be at least 2 characters long.</label>
+    </div>
+    <div *ngIf="errors['maxlength']">
+      <label>* Name must be less than 20 characters.</label>
+    </div>
+    <div *ngIf="errors['pattern']">
+      <label>* Name must not contain special characters or spaces.</label>
+    </div>
+    <div *ngIf="serverName?.touched && errors['required']">
+      <label>* Name is required.</label>
+    </div>
+    <input class="e-input" type="text" placeholder="Enter Server Name" formControlName="serverName"/>
+  </form>
+  <table>
+    <tr>
+      <td><button ejs-button (click)="close()">Cancel</button></td>
+      <td><button ejs-button (click)="submit()" isPrimary="true">Submit</button></td>
+    </tr>
+  </table>
+  <div id="spinnerDiv"></div>
+</ejs-dialog>

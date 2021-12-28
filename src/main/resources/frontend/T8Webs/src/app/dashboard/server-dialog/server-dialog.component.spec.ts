@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AddServerDialogComponent } from './add-server-dialog.component';
+import { ServerDialogComponent } from './server-dialog.component';
 
-describe('AddServerDialogComponent', () => {
-  let component: AddServerDialogComponent;
-  let fixture: ComponentFixture<AddServerDialogComponent>;
+describe('ServerDialogComponent', () => {
+  let component: ServerDialogComponent;
+  let fixture: ComponentFixture<ServerDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AddServerDialogComponent ]
+      declarations: [ ServerDialogComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AddServerDialogComponent);
+    fixture = TestBed.createComponent(ServerDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

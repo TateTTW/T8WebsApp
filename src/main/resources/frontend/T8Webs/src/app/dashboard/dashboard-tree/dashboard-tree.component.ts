@@ -1,6 +1,14 @@
 import {Component, EventEmitter, OnInit, Output, ViewChild} from '@angular/core';
-import {ContextMenuComponent, NodeClickEventArgs, TreeViewComponent, MenuEventArgs, MenuItemModel, BeforeOpenCloseMenuEventArgs} from "@syncfusion/ej2-angular-navigations";
-
+import {
+  BeforeOpenCloseMenuEventArgs,
+  ContextMenuComponent,
+  MenuEventArgs,
+  MenuItemModel,
+  NodeClickEventArgs,
+  TreeViewComponent
+} from "@syncfusion/ej2-angular-navigations";
+import {NodeType, TreeNode} from "./TreeNode";
+import {Job, JobAction, JobType} from "../server-dialog/Job";
 
 @Component({
   selector: 'dashboard-tree',
@@ -12,24 +20,25 @@ export class DashboardTreeComponent implements OnInit {
   @ViewChild ('treeView') treeView!: TreeViewComponent;
   @ViewChild ('contextMenu') contextMenu!: ContextMenuComponent;
 
-  @Output() openAddServer: EventEmitter<any> = new EventEmitter<any>();
+  @Output() nodeSelection: EventEmitter<TreeNode> = new EventEmitter<TreeNode>();
+  @Output() openAddServer: EventEmitter<Job> = new EventEmitter<Job>();
 
   public treeData: Object[] = [
-    { id: 'servers', name: 'Servers', expanded: true,
+    { id: '0', name: 'Servers', expanded: true, hasAttribute:{type: 0},
       subChild: [
-        {id: '101', name: 'GurrCannabis'},
-        {id: '102', name: 'DiabloWiki'}
+        {id: '101', name: 'GurrCannabis', hasAttribute:{type: 1}},
+        {id: '102', name: 'DiabloWiki', hasAttribute:{type: 1}}
       ]
     },
     {
-      id: 'loadBalancers', name: 'Load Balancers',
+      id: '1', name: 'Load Balancers', hasAttribute:{type: 2},
       subChild: [
-        {id: '201', name: 'Alex'}
+        {id: '1', name: 'Alex', hasAttribute:{type: 3}}
       ]
     }
   ];
 
-  public treeFields: Object ={ dataSource: this.treeData, id: 'id', text: 'name', child: 'subChild', htmlAttributes: 'hasAttribute' };
+  public treeFields: Object = { dataSource: this.treeData, id: 'id', text: 'name', child: 'subChild', htmlAttributes: 'hasAttribute' };
 
   public contextMenuItems: MenuItemModel[] = [{ text: 'Add' }];
 
@@ -38,27 +47,51 @@ export class DashboardTreeComponent implements OnInit {
   ngOnInit(): void { }
 
   public nodeClicked(args: NodeClickEventArgs) {
-    const nodeId = args.node.getAttribute('data-uid');
-    if (args.event.which === 3 && nodeId) {
-      this.treeView.selectedNodes = [nodeId];
+    let id = args.node.getAttribute('data-uid');
+    let type = args.node.getAttribute('type');
+    let text = args.node.innerText;
+
+    if(text.includes("\n")){
+      text = text.substring(0, text.indexOf("\n"));
+    }
+
+    if (args.event.which === 3 && id) {
+      this.treeView.selectedNodes = [id];
+    }
+
+    if(id && !isNaN(parseInt(id)) && type && !isNaN(parseInt(type))){
+      const nodeId = parseInt(id);
+      const nodeType = NodeType.findNodeType(parseInt(type));
+      const treeNode = new TreeNode(nodeId, text, nodeType);
+      this.nodeSelection.emit(treeNode);
     }
   }
 
-  public menuClick(args: MenuEventArgs) {
-    let targetNodeId: string = this.treeView?.selectedNodes[0];
+  public contextMenuClick(args: MenuEventArgs) {
+    let nodeId: string = this.treeView?.selectedNodes[0];
+    if(isNaN(parseInt(nodeId))){
+      return;
+    }
+
+    const nodeType = NodeType.findNodeType(parseInt(nodeId));
     if (args.item.text == "Add") {
-      this.openAddServer.emit();
+      const job: Job = {
+        type: nodeType === NodeType.ServerGroup ? JobType.Server : JobType.LoadBalancer,
+        action: JobAction.Add,
+        vmid: -1
+      }
+      this.openAddServer.emit(job);
     }
   }
 
   public beforeOpen(args: BeforeOpenCloseMenuEventArgs) {
-    let targetNodeId: string = this.treeView.selectedNodes[0];
-    let targetNode: Element | null = document.querySelector('[data-uid="' + targetNodeId + '"]');
+    let id: string = this.treeView.selectedNodes[0];
+    let type = parseInt(document.querySelector('[data-uid="' + id + '"]')?.getAttribute('type') ?? '-1');
 
-    if (targetNodeId !== 'servers') {
-      this.contextMenu.hideItems(['Add']);
-    } else {
+    if (type == NodeType.ServerGroup.id || type === NodeType.BalancerGroup.id) {
       this.contextMenu.showItems(['Add']);
+    } else {
+      this.contextMenu.hideItems(['Add']);
     }
   }
 
