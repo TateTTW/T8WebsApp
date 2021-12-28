@@ -21,8 +21,9 @@ export class DashboardTreeComponent implements OnInit {
   @ViewChild ('contextMenu') contextMenu!: ContextMenuComponent;
 
   @Output() nodeSelection: EventEmitter<TreeNode> = new EventEmitter<TreeNode>();
-  @Output() openAddServer: EventEmitter<Job> = new EventEmitter<Job>();
+  @Output() doJob: EventEmitter<Job> = new EventEmitter<Job>();
 
+  // group id must match hasAttribute{ type } which represents nodeType
   public treeData: Object[] = [
     { id: '0', name: 'Servers', expanded: true, hasAttribute:{type: 0},
       subChild: [
@@ -31,16 +32,47 @@ export class DashboardTreeComponent implements OnInit {
       ]
     },
     {
-      id: '1', name: 'Load Balancers', hasAttribute:{type: 2},
+      id: '2', name: 'Load Balancers', hasAttribute:{type: 2},
       subChild: [
-        {id: '1', name: 'Alex', hasAttribute:{type: 3}}
+        {id: '201', name: 'Alex', hasAttribute:{type: 3}}
       ]
     }
   ];
 
   public treeFields: Object = { dataSource: this.treeData, id: 'id', text: 'name', child: 'subChild', htmlAttributes: 'hasAttribute' };
 
-  public contextMenuItems: MenuItemModel[] = [{ text: 'Add' }];
+  public contextMenuItems: MenuItemModel[] = [
+    {
+      text: 'Add',
+      iconCss: 'fa fa-plus'
+    },
+    {
+      text: 'Start',
+      iconCss: 'fa fa-play'
+    },
+    {
+      text: 'Stop',
+      iconCss: 'fa fa-stop'
+    },
+    {
+      text: 'Reboot',
+      iconCss: 'fa fa-refresh'
+    },
+    {
+      text: 'Edit',
+      iconCss: 'fa fa-gear',
+      items: [
+        {
+          text: 'Rename',
+          iconCss: 'fa fa-pencil'
+        },
+        {
+          text: 'Delete',
+          iconCss: 'fa fa-trash'
+        }
+      ]
+    }
+  ];
 
   constructor() { }
 
@@ -68,30 +100,41 @@ export class DashboardTreeComponent implements OnInit {
   }
 
   public contextMenuClick(args: MenuEventArgs) {
-    let nodeId: string = this.treeView?.selectedNodes[0];
-    if(isNaN(parseInt(nodeId))){
+    let nodeIdStr: string = this.treeView?.selectedNodes[0];
+    if(args.item.text && isNaN(parseInt(nodeIdStr))){
       return;
     }
+    const node = this.treeView.getNode(nodeIdStr);
+    const nodeId = parseInt(nodeIdStr);
 
-    const nodeType = NodeType.findNodeType(parseInt(nodeId));
-    if (args.item.text == "Add") {
-      const job: Job = {
-        type: nodeType === NodeType.ServerGroup ? JobType.Server : JobType.LoadBalancer,
-        action: JobAction.Add,
-        vmid: -1
-      }
-      this.openAddServer.emit(job);
+    let nodeType = NodeType.None;
+
+    if(!node['parentID']){
+      nodeType = NodeType.findNodeType(nodeId);
+    } else if (!isNaN(parseInt(<string>node['parentID']))) {
+      nodeType = NodeType.findNodeType(parseInt(<string>node['parentID']));
     }
+
+    this.doJob.emit({
+      type: (nodeType == NodeType.ServerGroup) ? JobType.Server : JobType.LoadBalancer,
+      action: Job.findJobAction(args.item.text),
+      vmid: (nodeId !== NodeType.ServerGroup.id && nodeId !== NodeType.BalancerGroup.id) ? nodeId : -1
+    });
   }
 
   public beforeOpen(args: BeforeOpenCloseMenuEventArgs) {
     let id: string = this.treeView.selectedNodes[0];
     let type = parseInt(document.querySelector('[data-uid="' + id + '"]')?.getAttribute('type') ?? '-1');
 
+    const vmItems = ['Start','Stop','Reboot','Edit'];
+    const groupItems = ['Add'];
+
     if (type == NodeType.ServerGroup.id || type === NodeType.BalancerGroup.id) {
-      this.contextMenu.showItems(['Add']);
+      this.contextMenu.showItems(groupItems);
+      this.contextMenu.hideItems(vmItems);
     } else {
-      this.contextMenu.hideItems(['Add']);
+      this.contextMenu.showItems(vmItems);
+      this.contextMenu.hideItems(groupItems);
     }
   }
 

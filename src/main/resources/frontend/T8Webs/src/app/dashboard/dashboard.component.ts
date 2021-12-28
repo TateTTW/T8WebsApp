@@ -1,8 +1,8 @@
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {User} from "./dto/user";
 import {NodeType, TreeNode} from "./dashboard-tree/TreeNode";
-import {createSpinner, showSpinner, hideSpinner} from "@syncfusion/ej2-angular-popups";
-import {Job} from "./server-dialog/Job";
+import {createSpinner, hideSpinner, showSpinner} from "@syncfusion/ej2-angular-popups";
+import {Job, JobAction} from "./server-dialog/Job";
 import {ServerDialogComponent} from "./server-dialog/server-dialog.component";
 
 @Component({
@@ -51,5 +51,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   openServerDialog(job: Job) {
     this.serverDialog.job = job;
     this.serverDialog.dialog.show()
+  }
+
+  processJob(job: Job) {
+    if(job.action == JobAction.Add || job.action == JobAction.Rename){
+      this.openServerDialog(job);
+    }
   }
 }

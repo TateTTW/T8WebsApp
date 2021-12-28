@@ -17,8 +17,6 @@ export class DashboardToolbarComponent implements OnInit, AfterViewInit,OnChange
   @ViewChild('loginAndOut') loginAndOut?: TemplateBinding;
   //@ViewChild('title') title?: HTMLElement;
 
-  private vmMenuItems = ["Start", "Stop", "Reboot"];
-
   @Input() user: User | undefined;
   @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', NodeType.None);
 
