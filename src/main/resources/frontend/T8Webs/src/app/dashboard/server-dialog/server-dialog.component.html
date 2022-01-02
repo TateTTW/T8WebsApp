@@ -1,4 +1,4 @@
-<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" width='333px' zIndex="500">
+<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" [allowDragging]="true" width='333px' zIndex="500">
   <form [formGroup]="formGroup">
     <div *ngIf="errors['minlength']">
       <label>* Name must be at least 2 characters long.</label>

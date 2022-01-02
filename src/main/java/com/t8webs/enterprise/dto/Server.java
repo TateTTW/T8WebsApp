@@ -8,8 +8,8 @@ public class Server {
      * Server's unique identifier
      */
     private int vmid;
-    private String name;
-    private String username;
-    private String ipAddress;
+    private String name = "";
+    private String username = "";
+    private String ipAddress = "";
     private boolean isFound;
 }

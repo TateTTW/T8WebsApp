@@ -34,7 +34,8 @@ build/
 
 ## Additional Ignore Files ##
 /src/main/resources/application.properties
-/src/main/resources/files/haproxy.cfg
+/src/main/resources/files/
+/src/main/resources/backupFiles/
 
 ## Angular Ignore Dist
 /src/main/resources/static

@@ -3,17 +3,14 @@ package com.t8webs.enterprise.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import com.t8webs.enterprise.T8WebsApplication;
-import org.springframework.stereotype.Service;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 
 import java.io.IOException;
 import java.util.Properties;
 
-@Service
 public class DomainUtil {
 
     private static Properties properties;
@@ -29,9 +26,8 @@ public class DomainUtil {
     /**
      * @param domainName to remove
      * @return
-     * @throws UnirestException
      */
-    public static boolean removeDomain(String domainName) throws UnirestException {
+    public static boolean removeDomain(String domainName) {
         HttpResponse<JsonNode> response = Unirest.delete(properties.getProperty("domainDeleteURL") + domainName.trim())
                 .header("Authorization", properties.getProperty("ssoKey"))
                 .header("Content-Type", "application/json")
@@ -43,9 +39,8 @@ public class DomainUtil {
     /**
      * @param domainName to create
      * @return
-     * @throws UnirestException
      */
-    public static boolean createDomain(String domainName) throws UnirestException {
+    public static boolean createDomain(String domainName) {
         ObjectMapper mapper = new ObjectMapper();
 
         ArrayNode arrayNode = mapper.createArrayNode();
