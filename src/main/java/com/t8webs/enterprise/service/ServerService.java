@@ -1,11 +1,13 @@
 package com.t8webs.enterprise.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.dao.IServerDAO;
 import com.t8webs.enterprise.dto.Server;
-import com.t8webs.enterprise.utils.ClientServerUtil;
-import com.t8webs.enterprise.utils.ProxmoxUtil;
+import com.t8webs.enterprise.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -14,41 +16,76 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class ServerService {
+public class ServerService implements IServerService {
     @Autowired
     IServerDAO serverDA0;
+    @Autowired
+    IProxmoxUtil proxmoxUtil;
+    @Autowired
+    IClientServerUtil clientServerUtil;
+    @Autowired
+    IReverseProxyUtil reverseProxyUtil;
 
+    private ObjectMapper mapper = new ObjectMapper();
     /**
      * @param username    String user to assign a server to
      * @param serverName  String name to give server
      * @return
      */
-    public boolean assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ServerNameNotAvailable, NoAvailableServers {
+    @Override
+    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException {
+        ObjectNode node = mapper.createObjectNode();
+        node.put("error", "");
+        node.put("success", false);
+
         // Confirm that the server name can be used
         if(!serverNameConforms(serverName) || serverDA0.existsBy(serverName.trim())){
-            throw new ServerNameNotAvailable();
+            node.put("error", "The server name, " + serverName + ", is not available.");
+            return node;
         }
+
         // Find an available server entry
         Server server = serverDA0.fetchAvailable();
         if(!server.isFound()){
-            throw new NoAvailableServers();
+            node.put("error", "There are no available servers.");
+            return node;
         }
+
         // Set user info on available server
         server.setName(serverName.trim());
         server.setUsername(username);
-        // Create a vm from template and retrieve dhcp assigned ip
-        String dhcpIp = ProxmoxUtil.createServer(server.getVmid(), server.getName());
 
-        if(!dhcpIp.isEmpty()){
-            // Set the vm's ip to a static ip defined in the server database entry
-            ClientServerUtil.updateServerIp(dhcpIp, server.getIpAddress());
-            // Shutdown vm to apply ip on startup
-            ProxmoxUtil.shutdownVM(server.getVmid());
-            // Update server entry in the server database table
-            return serverDA0.update(server);
+        // Create a vm from template and retrieve dhcp assigned ip
+        String dhcpIp = createProxServer(server.getVmid(), server.getName());
+        if(dhcpIp.isEmpty()){
+            node.put("error", "Failed to create server.");
+            return node;
         }
 
-        return false;
+        // Set the vm's ip to a static ip defined in the server database entry
+        if(!clientServerUtil.updateServerIp(dhcpIp, server.getIpAddress())) {
+            node.put("error", "Failed to connect server to valid ip address.");
+            return node;
+        }
+
+        // Shutdown vm to apply ip on startup
+        proxmoxUtil.shutdownVM(server.getVmid());
+
+        // Route server name subdomain to server ip address
+        if(!reverseProxyUtil.configServer(server)) {
+            node.put("error", "Failed to configure server routing.");
+            return node;
+        }
+
+        // update server database entry
+        if(!serverDA0.update(server)){
+            node.put("error", "Failed to update server entry.");
+            return node;
+        }
+
+        node.put("success", true);
+
+        return node;
     }
 
     private boolean serverNameConforms(String serverName) {
@@ -66,12 +103,32 @@ public class ServerService {
         return true;
     }
 
+    // ProxmoxUtil 'retry' methods must be called from outside class
+    private String createProxServer(int vmid, String vmName) {
+        if(proxmoxUtil.cloneVM(vmid, vmName)){
+            try {
+                if (proxmoxUtil.startVM(vmid)) {
+                    String ipAddress = proxmoxUtil.getServerIp(vmid);
+
+                    if (!ipAddress.trim().isEmpty()) {
+                        return ipAddress;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return "";
+    }
+
     /**
      * @param username    String user assigned to server
      * @param vmid        int uniquely identifying the server
      * @param serverName  String to rename the server
      * @return
      */
+    @Override
     public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
         List<Server> userServers= serverDA0.fetchByUsername(username);
 
@@ -85,7 +142,27 @@ public class ServerService {
         return false;
     }
 
-    public class ServerNameNotAvailable extends Exception { }
+    @Override
+    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException {
+        List<Server> userServers = serverDA0.fetchByUsername(username);
 
-    public class NoAvailableServers extends Exception { }
+        Server deployServer = new Server();
+
+        for(Server server: userServers){
+            if(server.getVmid() == vmid){
+                deployServer = server;
+                break;
+            }
+        }
+
+        if(deployServer.isFound()){
+            if(proxmoxUtil.isVmRunning(vmid)){
+                return clientServerUtil.updateBuildFile(deployServer.getIpAddress(), buildFile);
+            } else {
+                return false;
+            }
+        }
+
+        return false;
+    }
 }

@@ -13,6 +13,7 @@ import { ButtonModule, CheckBoxModule } from "@syncfusion/ej2-angular-buttons";
 import { TreeViewAllModule, ToolbarModule, MenuModule, ContextMenuModule  } from "@syncfusion/ej2-angular-navigations";
 import { DropDownButtonModule } from "@syncfusion/ej2-angular-splitbuttons";
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
+import { UploaderModule } from '@syncfusion/ej2-angular-inputs';
 
 // Additional Components
 import { HomepageComponent } from "./homepage/homepage.component";
@@ -21,6 +22,7 @@ import { PageNotFoundComponent } from './page-not-found/page-not-found.component
 import { DashboardToolbarComponent } from './dashboard/dashboard-toolbar/dashboard-toolbar.component';
 import { DashboardTreeComponent } from './dashboard/dashboard-tree/dashboard-tree.component';
 import { ServerDialogComponent } from './dashboard/server-dialog/server-dialog.component';
+import { ServerContentComponent } from './dashboard/server-content/server-content.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,8 @@ import { ServerDialogComponent } from './dashboard/server-dialog/server-dialog.c
     PageNotFoundComponent,
     DashboardToolbarComponent,
     DashboardTreeComponent,
-    ServerDialogComponent
+    ServerDialogComponent,
+    ServerContentComponent
   ],
   imports: [
     FlexLayoutModule,
@@ -47,7 +50,8 @@ import { ServerDialogComponent } from './dashboard/server-dialog/server-dialog.c
     ContextMenuModule,
     DialogModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    UploaderModule
   ],
   providers: [],
   bootstrap: [AppComponent]

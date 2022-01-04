@@ -22,27 +22,20 @@ public class ServerDAOStub implements IServerDAO {
     private static HashMap<Integer, Server> servers;
     static {
         servers = new HashMap<>();
-
-        Server server1 = new Server();
-        server1.setVmid(111);
-        server1.setFound(true);
-        server1.setUsername("");
-        server1.setName("");
-        servers.put(server1.getVmid(), server1);
-
-        Server server2 = new Server();
-        server2.setVmid(112);
-        server2.setFound(true);
-        server2.setUsername("");
-        server2.setName("");
-        servers.put(server2.getVmid(), server2);
-
-        Server server3 = new Server();
-        server3.setVmid(113);
-        server3.setFound(true);
-        server3.setUsername("");
-        server3.setName("");
-        servers.put(server3.getVmid(), server3);
+        for(int i=120; i<=130; i++){
+            Server server = new Server();
+            server.setVmid(i);
+            server.setIpAddress("192.168.90."+i);
+            if(i==128){
+                server.setUsername("tatettw@gmail.com");
+                server.setName("tvtracker");
+            } else {
+                server.setUsername("");
+                server.setName("");
+            }
+            server.setFound(true);
+            servers.put(server.getVmid(), server);
+        }
     }
     /**
      * Method for creating a new Server record in the database

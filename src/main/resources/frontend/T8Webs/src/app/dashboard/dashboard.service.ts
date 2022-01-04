@@ -23,6 +23,10 @@ export class DashboardService {
     return this.http.put(url, body, options).pipe(catchError(this.handleError))
   }
 
+  private postBodyData(url: string, body: any, options: any): Observable<any> {
+    return this.http.post(url, body, options).pipe(catchError(this.handleError))
+  }
+
   private handleError(err: HttpErrorResponse) {
     let errorMessage = "";
 
@@ -56,5 +60,23 @@ export class DashboardService {
   getUser(): Observable<User> {
     const url = '/user';
     return this.getData(url, undefined);
+  }
+
+  deployBuild(vmid: number, file: File): Observable<any> {
+    const url = '/deployBuild';
+
+    let headers = new Headers();
+    /** In Angular 5, including the header Content-Type can invalidate your request */
+    headers.append('Content-Type', 'multipart/form-data');
+    headers.append('Accept', 'application/json');
+
+    const params = {vmid: vmid};
+
+    let formData:FormData = new FormData();
+    formData.append('buildFile', file, "build.war");
+
+    let options = { headers: headers, params: this.createHttpParams(params) };
+
+    return this.postBodyData(url, formData, options)
   }
 }

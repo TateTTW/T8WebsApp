@@ -3,11 +3,14 @@ package com.t8webs.enterprise.utils;
 import com.jcraft.jsch.*;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dto.Server;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.Properties;
 
-public class ReverseProxyUtil {
+@Component
+public class ReverseProxyUtil implements IReverseProxyUtil {
 
     private static Properties properties;
     static {
@@ -33,9 +36,10 @@ public class ReverseProxyUtil {
     private static String proxyIpAddress = properties.getProperty("proxyIpAddress");
     private static String reloadCommand = properties.getProperty("proxyReloadCmd");
 
-    public static boolean configServer(Server server) {
+    @Override
+    public boolean configServer(Server server) {
 
-        if(updateCfgFile(server)) {
+        if(addUpdateServerName(server)) {
             if(syncRemoteCfg()) {
                 if(reloadService()){
                     return true;
@@ -46,7 +50,8 @@ public class ReverseProxyUtil {
         return false;
     }
 
-    private static boolean syncRemoteCfg() {
+    @Override
+    public boolean syncRemoteCfg() {
 
         Session jschSession = null;
         ChannelSftp channelSftp = null;
@@ -92,7 +97,8 @@ public class ReverseProxyUtil {
         return true;
     }
 
-    private static boolean reloadService() {
+    @Override
+    public boolean reloadService() {
         Session jschSession = null;
         Channel channel = null;
 
@@ -128,7 +134,8 @@ public class ReverseProxyUtil {
         return true;
     }
 
-    private static boolean updateCfgFile(Server server) {
+    @Override
+    public boolean addUpdateServerName(Server server) {
         String newLine = "        use_backend " + server.getVmid() + " if { hdr(host) -i " + server.getName().trim() + "." + domain + " }";
 
         File orgFile  = new File(localFile);
@@ -147,7 +154,6 @@ public class ReverseProxyUtil {
             boolean found = false;
             while ((line = br.readLine()) != null) {
                 if (line.contains("use_backend " + server.getVmid() + " if ")){
-                    String subStr = line.substring(line.indexOf("{"), line.indexOf("}"));
                     line = newLine;
                     found = true;
                 }

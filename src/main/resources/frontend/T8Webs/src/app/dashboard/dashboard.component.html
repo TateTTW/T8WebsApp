@@ -9,7 +9,8 @@
     </div>
     <div fxFlex="85">
         <dashboard-toolbar [user]="user" [selectedTreeNode]="selectedTreeNode"></dashboard-toolbar>
-        <homepage [inDashboard]="true" (retrievedUser)="setUser($event)"></homepage>
+        <server-content *ngIf="this.selectedTreeNode.type.id == 1"></server-content>
+        <homepage *ngIf="this.selectedTreeNode.type.id == 4" [inDashboard]="true" (retrievedUser)="setUser($event)"></homepage>
     </div>
     <server-dialog #serverDialog (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-dialog>
   </div>

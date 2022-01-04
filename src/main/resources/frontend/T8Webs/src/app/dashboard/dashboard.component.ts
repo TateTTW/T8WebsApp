@@ -27,10 +27,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.user = user;
   }
 
-  nodeSelection(treeNode: TreeNode) {
-    this.selectedTreeNode = treeNode;
-  }
-
   ngAfterViewInit(): void {
     setTimeout((()=>{
       const spinnerTarget = document.querySelector('#spinnerDiv') as HTMLElement;
@@ -51,6 +47,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   openServerDialog(job: Job) {
     this.serverDialog.job = job;
     this.serverDialog.dialog.show()
+  }
+
+  nodeSelection(treeNode: TreeNode) {
+    this.selectedTreeNode = treeNode;
   }
 
   processJob(job: Job) {

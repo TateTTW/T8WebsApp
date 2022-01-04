@@ -2,6 +2,9 @@ package com.t8webs.enterprise.utils;
 
 import com.jcraft.jsch.*;
 import com.t8webs.enterprise.T8WebsApplication;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -9,7 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
-public class ClientServerUtil {
+@Component
+public class ClientServerUtil implements IClientServerUtil {
 
     private static Properties properties;
     static {
@@ -34,8 +38,11 @@ public class ClientServerUtil {
     private static String localIpCfg = properties.getProperty("localIpCfg");
     private static String localIpCfgBk = properties.getProperty("localIpCfgBk");
     private static String remoteIpCfg = properties.getProperty("remoteIpCfg");
+    private static String deployCmd = properties.getProperty("deployCmd");
+    private static String remoteBuildFile = properties.getProperty("remoteBuildFile");
 
-    public static boolean updateServerIp(String oldIp, String newIp) {
+    @Override
+    public boolean updateServerIp(String oldIp, String newIp) {
         boolean success = false;
 
         if(editIpCfgFile(newIp)){
@@ -46,7 +53,8 @@ public class ClientServerUtil {
         return success;
     }
 
-    private static boolean editIpCfgFile(String newIpAddress) {
+    @Override
+    public boolean editIpCfgFile(String newIpAddress) {
         final String newLine = "      addresses: [" + newIpAddress.trim() + "/24]";
 
         File orgFile  = new File(localIpCfg);
@@ -96,7 +104,8 @@ public class ClientServerUtil {
         return true;
     }
 
-    private static void resetLocalIpCfg() {
+    @Override
+    public void resetLocalIpCfg() {
         Path destPath = new File(localIpCfg).toPath();
         Path srcPath = new File(localIpCfgBk).toPath();
         try {
@@ -107,7 +116,8 @@ public class ClientServerUtil {
     }
 
 
-    private static boolean replaceRemoteIpCfg(String ipAddress) {
+    @Override
+    public boolean replaceRemoteIpCfg(String ipAddress) {
         Session jschSession = null;
         ChannelSftp channelSftp = null;
 
@@ -137,6 +147,66 @@ public class ClientServerUtil {
             return false;
 
         } finally {
+            if (jschSession != null) {
+                jschSession.disconnect();
+            }
+            if (channelSftp != null) {
+                channelSftp.disconnect();
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) {
+
+        if(multipartFile == null) {
+            return false;
+        }
+
+        File tempFile = null;
+
+        Session jschSession = null;
+        ChannelSftp channelSftp = null;
+
+        try {
+
+            tempFile = File.createTempFile("build_",".war");
+
+            tempFile.getName();
+
+            multipartFile.transferTo(tempFile);
+
+            JSch jsch = new JSch();
+            jschSession = jsch.getSession(clientUser, ipAddress, 22);
+            jschSession.setConfig(config);
+            jschSession.setPassword(clientPass);
+
+            jschSession.connect(10000);
+
+            Channel sftp = jschSession.openChannel("sftp");
+
+            sftp.connect(5000);
+
+            channelSftp = (ChannelSftp) sftp;
+
+            // transfer file from local to remote server
+            channelSftp.put(tempFile.getPath(), remoteBuildFile);
+
+            channelSftp.exit();
+
+        } catch (SftpException | JSchException | IOException e) {
+
+            e.printStackTrace();
+            return false;
+
+        } finally {
+
+            if(tempFile != null) {
+                tempFile.delete();
+            }
+
             if (jschSession != null) {
                 jschSession.disconnect();
             }
