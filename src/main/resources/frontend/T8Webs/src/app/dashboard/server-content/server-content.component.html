@@ -5,7 +5,7 @@
       <table>
         <tr>
           <td>
-            <button #deployBuild ejs-button (click)="deploy()" isPrimary="true">Deploy</button>
+            <button ejs-button [disabled]="disableDeploy" (click)="submit()" isPrimary="true">Deploy</button>
           </td>
         </tr>
       </table>

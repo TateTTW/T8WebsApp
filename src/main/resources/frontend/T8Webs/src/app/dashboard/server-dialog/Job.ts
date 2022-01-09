@@ -11,6 +11,7 @@ export enum JobAction {
   Stop = "Stop",
   Reboot = "Reboot",
   Rename = "Rename",
+  Delete = "Delete",
   None= ""
 }
 

@@ -1,5 +1,10 @@
 <div class="control-section">
-  <h4 #title id="title">{{this.selectedTreeNode.name}}</h4>
+  <h4 id="title">{{this.selectedTreeNode.name}}</h4>
+  <h5 id="status">
+    <span *ngIf="this.selectedTreeNode.type.displayName == 'Server'">
+      ({{this.selectedTreeNode.status}})
+    </span>
+  </h5>
   <div class="toolbar-menu-control">
     <div #loginAndOut id="loginAndOut">
       <button *ngIf="!user" ejs-button (click)="login()"><i class="fa fa-google"></i> | Sign in</button>

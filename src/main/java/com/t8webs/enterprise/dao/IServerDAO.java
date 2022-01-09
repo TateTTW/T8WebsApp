@@ -54,10 +54,18 @@ public interface IServerDAO {
     /**
      * Method for fetching servers assigned to a user
      *
-     * @param username String uniquely identifying a UserAccount record
+     * @param username String uniquely identifying a User
      * @return List of Servers assigned to the given user
      */
     List<Server> fetchByUsername(String username) throws SQLException, IOException, ClassNotFoundException;
+
+
+    /**
+     * @param username String uniquely identifying a User
+     * @param vmid String uniquely identifying a server record
+     * @return server record assigned to the user
+     */
+    Server fetchUserServer(String username, int vmid) throws SQLException, IOException, ClassNotFoundException;
 
     /**
      * Method for deleting a distinct UserAccount record from the database

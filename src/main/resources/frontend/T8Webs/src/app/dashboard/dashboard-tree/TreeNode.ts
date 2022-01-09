@@ -2,11 +2,13 @@
 export class TreeNode {
   id: number = -1;
   name: string = '';
+  status: string = '';
   type: NodeType = NodeType.None
 
-  constructor(id: number, name: string, type: NodeType) {
+  constructor(id: number, name: string, status: string, type: NodeType) {
     this.id = id;
     this.name = name;
+    this.status = status;
     this.type = type;
   }
 }

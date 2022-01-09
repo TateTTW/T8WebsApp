@@ -1,6 +1,7 @@
 package com.t8webs.enterprise.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.dao.IServerDAO;
 import com.t8webs.enterprise.dto.Server;
@@ -33,7 +34,7 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException {
+    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         ObjectNode node = mapper.createObjectNode();
         node.put("error", "");
         node.put("success", false);
@@ -56,7 +57,7 @@ public class ServerService implements IServerService {
         server.setUsername(username);
 
         // Create a vm from template and retrieve dhcp assigned ip
-        String dhcpIp = createProxServer(server.getVmid(), server.getName());
+        String dhcpIp = createProxServer(server.getVmid(), serverName);
         if(dhcpIp.isEmpty()){
             node.put("error", "Failed to create server.");
             return node;
@@ -142,27 +143,108 @@ public class ServerService implements IServerService {
         return false;
     }
 
+    /**
+     * @param username    String uniquely identifying user
+     * @return
+     */
     @Override
-    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException {
-        List<Server> userServers = serverDA0.fetchByUsername(username);
+    public ArrayNode getUserServers(String username) throws SQLException, IOException, ClassNotFoundException {
+        List<Server> servers = serverDA0.fetchByUsername(username);
+        ArrayNode serverNodes = mapper.createArrayNode();
+        for(Server server: servers){
+            ObjectNode serverNode = mapper.createObjectNode();
+            serverNode.put("id", String.valueOf(server.getVmid()));
+            serverNode.put("name", server.getName());
 
-        Server deployServer = new Server();
+            ObjectNode attributes = mapper.createObjectNode();
+            attributes.put("type", 1);
+            attributes.put("status", "");
+            serverNode.put("hasAttributes", attributes);
 
-        for(Server server: userServers){
-            if(server.getVmid() == vmid){
-                deployServer = server;
-                break;
-            }
+            serverNodes.add(serverNode);
         }
 
-        if(deployServer.isFound()){
+        return serverNodes;
+    }
+
+    @Override
+    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()){
             if(proxmoxUtil.isVmRunning(vmid)){
-                return clientServerUtil.updateBuildFile(deployServer.getIpAddress(), buildFile);
+                return clientServerUtil.deployBuild(server.getIpAddress(), buildFile);
             } else {
                 return false;
             }
         }
 
         return false;
+    }
+
+    @Override
+    public boolean startVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()
+            && proxmoxUtil.startVM(vmid)
+            && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid)){
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean shutdownVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()
+            && proxmoxUtil.shutdownVM(vmid)
+            && proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, vmid)){
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean rebootVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()
+            && proxmoxUtil.rebootVM(vmid)
+            && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()){
+            return proxmoxUtil.deleteVM(vmid);
+        }
+
+        return false;
+    }
+
+    @Override
+    public String getVmStatus(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
+        Server server = serverDA0.fetchUserServer(username, vmid);
+
+        if(server.isFound()){
+            if(proxmoxUtil.isVmLocked(vmid)){
+                return "locked";
+            } else {
+                return proxmoxUtil.getVmStatus(vmid);
+            }
+        }
+
+        return "";
     }
 }

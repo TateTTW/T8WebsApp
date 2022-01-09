@@ -28,7 +28,7 @@ public class ServerDAOStub implements IServerDAO {
             server.setIpAddress("192.168.90."+i);
             if(i==128){
                 server.setUsername("tatettw@gmail.com");
-                server.setName("tvtracker");
+                server.setName("T8Server1");
             } else {
                 server.setUsername("");
                 server.setName("");
@@ -126,7 +126,7 @@ public class ServerDAOStub implements IServerDAO {
     /**
      * Method for fetching servers assigned to a user
      *
-     * @param username String uniquely identifying a UserAccount record
+     * @param username String uniquely identifying a User
      * @return List of Servers assigned to the given user
      */
     @Override
@@ -139,6 +139,22 @@ public class ServerDAOStub implements IServerDAO {
         }
 
         return userServers;
+    }
+
+    /**
+     * @param username String uniquely identifying a User
+     * @param vmid     String uniquely identifying a server record
+     * @return server record assigned to the user
+     */
+    @Override
+    public Server fetchUserServer(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
+        for(Server server: servers.values()){
+            if(server.getVmid() == vmid && server.getUsername().equals(username)){
+                return server;
+            }
+        }
+
+        return new Server();
     }
 
     /**

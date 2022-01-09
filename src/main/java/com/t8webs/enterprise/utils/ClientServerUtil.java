@@ -1,8 +1,9 @@
 package com.t8webs.enterprise.utils;
 
-import com.jcraft.jsch.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
-import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -10,10 +11,16 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.MessageFormat;
 import java.util.Properties;
 
 @Component
 public class ClientServerUtil implements IClientServerUtil {
+
+    @Autowired
+    ISShUtils sshUtils;
+
+    private ObjectMapper mapper = new ObjectMapper();
 
     private static Properties properties;
     static {
@@ -25,12 +32,6 @@ public class ClientServerUtil implements IClientServerUtil {
         }
     }
 
-    private static Properties config;
-    static {
-        config = new Properties();
-        config.put("StrictHostKeyChecking", "no");
-    }
-
     private static String rootUser = properties.getProperty("clientRootUser");
     private static String rootPass = properties.getProperty("clientRootPass");
     private static String clientUser = properties.getProperty("clientUser");
@@ -38,7 +39,8 @@ public class ClientServerUtil implements IClientServerUtil {
     private static String localIpCfg = properties.getProperty("localIpCfg");
     private static String localIpCfgBk = properties.getProperty("localIpCfgBk");
     private static String remoteIpCfg = properties.getProperty("remoteIpCfg");
-    private static String deployCmd = properties.getProperty("deployCmd");
+    private static String stopBuildCmd = properties.getProperty("stopBuildCmd");
+    private static String runBuildCmd = properties.getProperty("runBuildCmd");
     private static String remoteBuildFile = properties.getProperty("remoteBuildFile");
 
     @Override
@@ -50,6 +52,19 @@ public class ClientServerUtil implements IClientServerUtil {
             resetLocalIpCfg();
         }
 
+        return success;
+    }
+
+    @Override
+    public boolean deployBuild(String ipAddress, MultipartFile multipartFile) {
+        boolean success = false;
+        String buildName = updateBuildFile(ipAddress, multipartFile);
+
+        if(!buildName.isEmpty()) {
+            if(this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)){
+                success = this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, MessageFormat.format(runBuildCmd, buildName));
+            }
+        }
         return success;
     }
 
@@ -115,106 +130,42 @@ public class ClientServerUtil implements IClientServerUtil {
         }
     }
 
-
     @Override
     public boolean replaceRemoteIpCfg(String ipAddress) {
-        Session jschSession = null;
-        ChannelSftp channelSftp = null;
-
-        try {
-
-            JSch jsch = new JSch();
-            jschSession = jsch.getSession(rootUser, ipAddress, 22);
-            jschSession.setConfig(config);
-            jschSession.setPassword(rootPass);
-
-            jschSession.connect(10000);
-
-            Channel sftp = jschSession.openChannel("sftp");
-
-            sftp.connect(5000);
-
-            channelSftp = (ChannelSftp) sftp;
-
-            // transfer file from local to remote server
-            channelSftp.put(localIpCfg, remoteIpCfg);
-
-            channelSftp.exit();
-
-        } catch (SftpException | JSchException e) {
-
-            e.printStackTrace();
-            return false;
-
-        } finally {
-            if (jschSession != null) {
-                jschSession.disconnect();
-            }
-            if (channelSftp != null) {
-                channelSftp.disconnect();
-            }
-        }
-
-        return true;
+        return sshUtils.doSecureFileTransfer(rootUser, rootPass, ipAddress, localIpCfg, remoteIpCfg);
     }
 
     @Override
-    public boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) {
+    public String updateBuildFile(String ipAddress, MultipartFile multipartFile) {
+
+        boolean success = false;
 
         if(multipartFile == null) {
-            return false;
+            return "";
         }
 
         File tempFile = null;
-
-        Session jschSession = null;
-        ChannelSftp channelSftp = null;
 
         try {
 
             tempFile = File.createTempFile("build_",".war");
 
-            tempFile.getName();
-
             multipartFile.transferTo(tempFile);
 
-            JSch jsch = new JSch();
-            jschSession = jsch.getSession(clientUser, ipAddress, 22);
-            jschSession.setConfig(config);
-            jschSession.setPassword(clientPass);
+            success = sshUtils.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
 
-            jschSession.connect(10000);
-
-            Channel sftp = jschSession.openChannel("sftp");
-
-            sftp.connect(5000);
-
-            channelSftp = (ChannelSftp) sftp;
-
-            // transfer file from local to remote server
-            channelSftp.put(tempFile.getPath(), remoteBuildFile);
-
-            channelSftp.exit();
-
-        } catch (SftpException | JSchException | IOException e) {
-
+        } catch (IOException e) {
             e.printStackTrace();
-            return false;
-
         } finally {
-
             if(tempFile != null) {
                 tempFile.delete();
             }
-
-            if (jschSession != null) {
-                jschSession.disconnect();
-            }
-            if (channelSftp != null) {
-                channelSftp.disconnect();
-            }
         }
 
-        return true;
+        if(success && tempFile != null) {
+            return tempFile.getName();
+        } else {
+            return "";
+        }
     }
 }

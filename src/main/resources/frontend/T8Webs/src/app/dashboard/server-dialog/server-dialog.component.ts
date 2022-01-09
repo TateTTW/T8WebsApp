@@ -4,6 +4,7 @@ import {Subscription} from "rxjs";
 import {DialogComponent} from "@syncfusion/ej2-angular-popups";
 import {AbstractControl, FormControl, FormGroup, ValidationErrors, Validators} from "@angular/forms";
 import {Job, JobAction, JobType} from "./Job";
+import {DialogUtility} from "@syncfusion/ej2-popups";
 
 @Component({
   selector: 'server-dialog',
@@ -24,6 +25,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
 
   @Output() showSpinner: EventEmitter<any> = new EventEmitter<any>();
   @Output() hideSpinner: EventEmitter<any> = new EventEmitter<any>();
+  @Output() refreshTree: EventEmitter<Job> = new EventEmitter<Job>();
 
   formGroup = new FormGroup({
     serverName: new FormControl(null, [
@@ -54,22 +56,52 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   submit(): void {
     if(this.serverName && this.serverName.valid) {
       this.showSpinner.emit();
-      this.addServerSub = this.dashboardService.addServer(this.serverName.value).subscribe(
-        data => this.submitSuccess(data),
+
+      if(this.job.action == JobAction.Add){
+        this.addServer();
+      }
+      else if (this.job.action == JobAction.Rename){
+
+      }
+    }
+  }
+
+  private addServer(): void {
+    if(this.serverName && this.serverName.valid) {
+      const serverName = this.serverName.value;
+      this.addServerSub = this.dashboardService.addServer(serverName).subscribe(
+        data => this.submitSuccess(serverName, data),
         error => this.submitFailure(error)
       )
     }
   }
 
-  submitSuccess(data: any): void {
+  submitSuccess(serverName: string, data: any): void {
     console.log(data);
     this.resetServerName();
     this.hideSpinner.emit();
+    this.refreshTree.emit();
+
+    DialogUtility.alert({
+      title: 'Success',
+      content: "Traffic to the " + serverName + " subdomain will be forwarded to the server on port 8080",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
   }
 
   submitFailure(data: any): void {
     console.log(data);
     this.hideSpinner.emit();
+
+    DialogUtility.alert({
+      title: 'Success',
+      content: "Traffic to the " + this.serverName?.value + " subdomain will be forwarded to the server on port 8080",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
   }
 
   resetServerName(): void {

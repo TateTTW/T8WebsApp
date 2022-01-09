@@ -1,6 +1,7 @@
 package com.t8webs.enterprise.service;
 
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,7 +17,7 @@ public interface IServerService {
      * @param serverName  String name to give server
      * @return
      */
-    ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.LockedVirtualMachineException;
+    ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException;
 
     /**
      * @param username    String user assigned to server
@@ -26,6 +27,18 @@ public interface IServerService {
      */
     boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException;
 
+    ArrayNode getUserServers(String username) throws SQLException, IOException, ClassNotFoundException;
+
     boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException;
+
+    boolean startVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException;
+
+    boolean shutdownVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException;
+
+    boolean rebootVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException;
+
+    boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException;
+
+    String getVmStatus(String username, int vmid) throws SQLException, IOException, ClassNotFoundException;
 }
 

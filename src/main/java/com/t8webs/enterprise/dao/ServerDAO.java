@@ -113,6 +113,24 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     }
 
     /**
+     * @param username String uniquely identifying a User
+     * @param vmid     String uniquely identifying a server record
+     * @return server record assigned to the user
+     */
+    @Override
+    public Server fetchUserServer(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
+        addWhere("vmid", vmid);
+        addWhere("username", username);
+        List<Server> servers = parse(select());
+
+        if(servers.isEmpty()){
+            return new Server();
+        }
+
+        return servers.get(0);
+    }
+
+    /**
      * Method for deleting a distinct UserAccount record from the database
      *
      * @param vmid int uniquely identifying a Server

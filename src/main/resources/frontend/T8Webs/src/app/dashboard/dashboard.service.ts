@@ -12,31 +12,35 @@ export class DashboardService {
   constructor(private http: HttpClient) { }
 
   private getData(url: string, options: any): Observable<any> {
-    return this.http.get(url, options).pipe(catchError(this.handleError))
+    return this.http.get(url, options);
   }
 
   private putData(url: string, options: any): Observable<any> {
-    return this.http.put(url, undefined, options).pipe(catchError(this.handleError))
+    return this.putBodyData(url, undefined, options);
+  }
+
+  private postData(url: string, options: any): Observable<any> {
+    return this.postBodyData(url, undefined, options);
+  }
+
+  private patchData(url: string, options: any): Observable<any> {
+    return this.patchBodyData(url, undefined, options);
+  }
+
+  private deleteData(url: string, options: any): Observable<any> {
+    return this.http.delete(url, options);
   }
 
   private putBodyData(url: string, body: any, options: any): Observable<any> {
-    return this.http.put(url, body, options).pipe(catchError(this.handleError))
+    return this.http.put(url, body, options);
   }
 
   private postBodyData(url: string, body: any, options: any): Observable<any> {
-    return this.http.post(url, body, options).pipe(catchError(this.handleError))
+    return this.http.post(url, body, options);
   }
 
-  private handleError(err: HttpErrorResponse) {
-    let errorMessage = "";
-
-    if(err.error instanceof ErrorEvent){
-      errorMessage = `An error occurred: ${err.error.message}`;
-    } else {
-      errorMessage = `Server returned code: ${err.status}, Error message is: ${err.message}`;
-    }
-
-    return throwError(errorMessage)
+  private patchBodyData(url: string, body: any, options: any): Observable<any> {
+    return this.http.patch(url, body, options);
   }
 
   createHttpParams(params: any): HttpParams {
@@ -54,12 +58,52 @@ export class DashboardService {
     const url = '/addServer';
     const params = {serverName: serverName};
     const options = { params: this.createHttpParams(params)};
-    return this.getData(url, options);
+    return this.postData(url, options);
+  }
+
+  deleteServer(vmid: number): Observable<any> {
+    const url = '/deleteServer';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.deleteData(url, options);
+  }
+
+  startServer(vmid: number): Observable<any> {
+    const url = '/startServer';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.patchData(url, options);
+  }
+
+  stopServer(vmid: number): Observable<any> {
+    const url = '/stopServer';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.patchData(url, options);
+  }
+
+  rebootServer(vmid: number): Observable<any> {
+    const url = '/rebootServer';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.patchData(url, options);
   }
 
   getUser(): Observable<User> {
     const url = '/user';
     return this.getData(url, undefined);
+  }
+
+  getServers(): Observable<any> {
+    const url = '/servers';
+    return this.getData(url, undefined);
+  }
+
+  getServerStatus(vmid: number): Observable<any> {
+    const url = '/serverStatus';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.getData(url, options);
   }
 
   deployBuild(vmid: number, file: File): Observable<any> {

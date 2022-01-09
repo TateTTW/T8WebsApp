@@ -6,7 +6,6 @@ import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
-import org.springframework.context.annotation.Profile;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -39,7 +38,12 @@ public class ProxmoxUtil implements IProxmoxUtil {
     private static String getVmIpUrl = properties.getProperty("getVmIpUrl");
     private static String statusVmUrl = properties.getProperty("statusVmUrl");
 
-    private static int minVmid = 110;
+    private static int minVmid = 120;
+
+    public enum State {
+        RUNNING,
+        STOPPED
+    }
 
     @Override
     public boolean cloneVM(int vmid, String vmName) {
@@ -56,21 +60,6 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .queryString("storage", "local-lvm")
                 .queryString("target", "pve")
                 .queryString("full", "1")
-                .asJson();
-
-        return response.getStatus() == 200;
-    }
-
-    @Override
-    public boolean deleteVm(int vmid) {
-        if(vmid < minVmid){
-            return false;
-        }
-
-        String url = MessageFormat.format(deleteVmUrl, domain, vmid);
-
-        HttpResponse<JsonNode> response = Unirest.delete(url)
-                .header("Authorization", proxmoxToken)
                 .asJson();
 
         return response.getStatus() == 200;
@@ -120,14 +109,30 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=10, value=LockedVirtualMachineException.class, backoff=@Backoff(delay = 5000))
-    public boolean startVM(int vmid) throws LockedVirtualMachineException {
+    @Retryable(maxAttempts=18, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    public boolean reachedState(State expectedState, int vmid) throws InvalidVmStateException {
+
+        if(isVmLocked(vmid)){
+            throw new InvalidVmStateException(vmid);
+        }
+
+        if( (expectedState == State.RUNNING && getServerIp(vmid).isEmpty())
+                || (expectedState == State.STOPPED && isVmRunning(vmid)) ) {
+            throw new InvalidVmStateException(vmid);
+        }
+
+        return true;
+    }
+
+    @Override
+    @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    public boolean startVM(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return false;
         }
 
         if(isVmLocked(vmid)){
-            throw new LockedVirtualMachineException(vmid);
+            throw new InvalidVmStateException(vmid);
         }
 
         String url = MessageFormat.format(startVmUrl, domain, vmid);
@@ -140,9 +145,14 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    public boolean shutdownVM(int vmid) {
+    @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    public boolean shutdownVM(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return false;
+        }
+
+        if(isVmLocked(vmid)){
+            throw new InvalidVmStateException(vmid);
         }
 
         String url = MessageFormat.format(shutdownVmUrl, domain, vmid);
@@ -155,9 +165,14 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    public boolean rebootVM(int vmid) {
+    @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    public boolean rebootVM(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return false;
+        }
+
+        if(isVmLocked(vmid)){
+            throw new InvalidVmStateException(vmid);
         }
 
         String url = MessageFormat.format(rebootVmUrl, domain, vmid);
@@ -170,14 +185,33 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=10, value=IpAddressRequestException.class, backoff=@Backoff(delay = 10000))
-    public String getServerIp(int vmid) throws IpAddressRequestException {
+    public boolean deleteVM(int vmid) {
+        if(vmid < minVmid){
+            return false;
+        }
+
+        if(isVmLocked(vmid) || isVmRunning(vmid)){
+            return false;
+        }
+
+        String url = MessageFormat.format(deleteVmUrl, domain, vmid);
+
+        HttpResponse<JsonNode> response = Unirest.delete(url)
+                .header("Authorization", proxmoxToken)
+                .asJson();
+
+        return response.getStatus() == 200;
+    }
+
+    @Override
+    @Retryable(maxAttempts=18, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    public String getServerIp(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return "";
         }
 
         if(!isVmRunning(vmid)){
-            throw new IpAddressRequestException(vmid);
+            throw new InvalidVmStateException(vmid);
         }
 
         String getVMipURL = MessageFormat.format(getVmIpUrl, domain, vmid);
@@ -187,7 +221,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .asJson();
 
         if(response.getStatus() != 200){
-            throw new IpAddressRequestException(vmid);
+            throw new InvalidVmStateException(vmid);
         }
 
         try {
@@ -211,21 +245,9 @@ public class ProxmoxUtil implements IProxmoxUtil {
         return "";
     }
 
-    public class LockedVirtualMachineException extends Exception {
-        public LockedVirtualMachineException(int vmid) {
-            super("VM"+vmid+" is locked.");
-        }
-    }
-
-    public class StoppedVirtualMachineException extends Exception {
-        public StoppedVirtualMachineException(int vmid) {
-            super("VM"+vmid+" is stopped.");
-        }
-    }
-
-    public class IpAddressRequestException extends Exception {
-        public IpAddressRequestException(int vmid) {
-            super("VM"+vmid+" is not responding to ip address request.");
+    public class InvalidVmStateException extends Exception {
+        public InvalidVmStateException(int vmid) {
+            super("VM"+vmid+" is in the wrong state for this request.");
         }
     }
 }
