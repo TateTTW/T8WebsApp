@@ -1,4 +1,4 @@
-<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" [allowDragging]="true" width='333px' zIndex="500">
+<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" [allowDragging]="true" [isModal]="true" width='333px' zIndex="500">
   <form [formGroup]="formGroup">
     <div *ngIf="errors['minlength']">
       <label>* Name must be at least 2 characters long.</label>
@@ -17,7 +17,7 @@
   <table>
     <tr>
       <td><button ejs-button (click)="close()">Cancel</button></td>
-      <td><button ejs-button (click)="submit()" isPrimary="true">Submit</button></td>
+      <td><button ejs-button (click)="confirm()" isPrimary="true">Submit</button></td>
     </tr>
   </table>
   <div id="spinnerDiv"></div>

@@ -3,7 +3,8 @@ package com.t8webs.enterprise.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.t8webs.enterprise.dao.IServerDAO;
+import com.t8webs.enterprise.dao.IAssignedServerDAO;
+import com.t8webs.enterprise.dao.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,9 @@ import java.util.regex.Pattern;
 @Service
 public class ServerService implements IServerService {
     @Autowired
-    IServerDAO serverDA0;
+    IAvailableServerDAO availableServerDAO;
+    @Autowired
+    IAssignedServerDAO assignedServerDAO;
     @Autowired
     IProxmoxUtil proxmoxUtil;
     @Autowired
@@ -34,27 +37,24 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException, ReverseProxyUtil.ProxyConfigLockedException {
         ObjectNode node = mapper.createObjectNode();
         node.put("error", "");
         node.put("success", false);
 
         // Confirm that the server name can be used
-        if(!serverNameConforms(serverName) || serverDA0.existsBy(serverName.trim())){
+        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
             node.put("error", "The server name, " + serverName + ", is not available.");
             return node;
         }
 
-        // Find an available server entry
-        Server server = serverDA0.fetchAvailable();
+        // Assign an available to server to the user
+        Server server = clientServerUtil.assignUserServer(username, serverName);
+
         if(!server.isFound()){
-            node.put("error", "There are no available servers.");
+            node.put("error", "Could not allocate an available server.");
             return node;
         }
-
-        // Set user info on available server
-        server.setName(serverName.trim());
-        server.setUsername(username);
 
         // Create a vm from template and retrieve dhcp assigned ip
         String dhcpIp = createProxServer(server.getVmid(), serverName);
@@ -72,18 +72,19 @@ public class ServerService implements IServerService {
         // Shutdown vm to apply ip on startup
         proxmoxUtil.shutdownVM(server.getVmid());
 
-        // Route server name subdomain to server ip address
-        if(!reverseProxyUtil.configServer(server)) {
+        // Update proxy config to route traffic to the server
+        if(!reverseProxyUtil.reconfigure()) {
             node.put("error", "Failed to configure server routing.");
             return node;
         }
 
-        // update server database entry
-        if(!serverDA0.update(server)){
-            node.put("error", "Failed to update server entry.");
+        // Confirm server is stopped
+        if(!proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid())){
+            node.put("error", "Failed to shutdown server.");
             return node;
         }
 
+        node.put("vmid", server.getVmid());
         node.put("success", true);
 
         return node;
@@ -130,14 +131,24 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
-        List<Server> userServers= serverDA0.fetchByUsername(username);
+    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException, ReverseProxyUtil.ProxyConfigLockedException {
+        // Confirm that the server name can be used
+        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
+            return false;
+        }
 
-        for(Server server: userServers){
-            if(server.getVmid() == vmid){
-                server.setName(serverName);
-                return serverDA0.update(server);
-            }
+        // Confirm server is assigned to user
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+        if(!server.isFound()){
+            return false;
+        }
+
+        // Set new server name
+        server.setName(serverName);
+
+        // Update database record and then update proxy configuration
+        if (assignedServerDAO.update(server) && reverseProxyUtil.reconfigure()) {
+            return true;
         }
 
         return false;
@@ -149,7 +160,7 @@ public class ServerService implements IServerService {
      */
     @Override
     public ArrayNode getUserServers(String username) throws SQLException, IOException, ClassNotFoundException {
-        List<Server> servers = serverDA0.fetchByUsername(username);
+        List<Server> servers = assignedServerDAO.fetchByUsername(username);
         ArrayNode serverNodes = mapper.createArrayNode();
         for(Server server: servers){
             ObjectNode serverNode = mapper.createObjectNode();
@@ -169,7 +180,7 @@ public class ServerService implements IServerService {
 
     @Override
     public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()){
             if(proxmoxUtil.isVmRunning(vmid)){
@@ -184,7 +195,7 @@ public class ServerService implements IServerService {
 
     @Override
     public boolean startVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()
             && proxmoxUtil.startVM(vmid)
@@ -197,7 +208,7 @@ public class ServerService implements IServerService {
 
     @Override
     public boolean shutdownVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()
             && proxmoxUtil.shutdownVM(vmid)
@@ -210,7 +221,7 @@ public class ServerService implements IServerService {
 
     @Override
     public boolean rebootVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()
             && proxmoxUtil.rebootVM(vmid)
@@ -223,11 +234,17 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException, ReverseProxyUtil.ProxyConfigLockedException {
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()){
-            return proxmoxUtil.deleteVM(vmid);
+        if(server.isFound()
+            && !proxmoxUtil.isVmRunning(vmid)
+            && proxmoxUtil.deleteVM(vmid)
+            && assignedServerDAO.delete(vmid)
+            && availableServerDAO.save(server)
+            && reverseProxyUtil.reconfigure())
+        {
+            return true;
         }
 
         return false;
@@ -235,7 +252,7 @@ public class ServerService implements IServerService {
 
     @Override
     public String getVmStatus(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
-        Server server = serverDA0.fetchUserServer(username, vmid);
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()){
             if(proxmoxUtil.isVmLocked(vmid)){

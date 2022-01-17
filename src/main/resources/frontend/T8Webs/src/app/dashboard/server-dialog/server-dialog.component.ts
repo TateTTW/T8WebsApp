@@ -53,7 +53,22 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
     this.addServerSub?.unsubscribe();
   }
 
-  submit(): void {
+  confirm() {
+    const dialog = DialogUtility.confirm({
+      title: "Confirm",
+      content: "Are you sure you want to " + this.job.action + " " + this.job.type + " " + this.serverName?.value + "?",
+      okButton: {
+        text: "Continue",
+        click: () => {
+          this.submit();
+          dialog.close();
+        }
+      },
+      showCloseIcon: true
+    });
+  }
+
+  private submit() {
     if(this.serverName && this.serverName.valid) {
       this.showSpinner.emit();
 
@@ -61,12 +76,12 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
         this.addServer();
       }
       else if (this.job.action == JobAction.Rename){
-
+        this.renameServer();
       }
     }
   }
 
-  private addServer(): void {
+  private addServer() {
     if(this.serverName && this.serverName.valid) {
       const serverName = this.serverName.value;
       this.addServerSub = this.dashboardService.addServer(serverName).subscribe(
@@ -76,11 +91,22 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  submitSuccess(serverName: string, data: any): void {
+  private renameServer() {
+    if(this.serverName && this.serverName.valid) {
+      const serverName = this.serverName.value;
+      this.addServerSub = this.dashboardService.renameServer(this.job.vmid, serverName).subscribe(
+        data => this.submitSuccess(serverName, data, this.job),
+        error => this.submitFailure(error)
+      )
+    }
+  }
+
+  submitSuccess(serverName: string, data: any, job?: Job) {
     console.log(data);
     this.resetServerName();
+    this.refreshTree.emit(job);
     this.hideSpinner.emit();
-    this.refreshTree.emit();
+    this.close();
 
     DialogUtility.alert({
       title: 'Success',
@@ -91,25 +117,25 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
     });
   }
 
-  submitFailure(data: any): void {
+  submitFailure(data: any) {
     console.log(data);
     this.hideSpinner.emit();
 
     DialogUtility.alert({
-      title: 'Success',
-      content: "Traffic to the " + this.serverName?.value + " subdomain will be forwarded to the server on port 8080",
+      title: 'Error',
+      content: "Failed to " + this.job.action + " " + this.job.type + ".",
       showCloseIcon: true,
       closeOnEscape: true,
       animationSettings: { effect: 'Zoom' }
     });
   }
 
-  resetServerName(): void {
+  resetServerName() {
     this.serverName?.setValue("");
     this.serverName?.markAsUntouched();
   }
 
-  close(): void {
+  close() {
     this.dialog.hide();
     this.resetServerName();
   }

@@ -68,6 +68,16 @@ export class DashboardService {
     return this.deleteData(url, options);
   }
 
+  renameServer(vmid: number, name: string): Observable<any> {
+    const url = '/renameServer';
+    const params = {
+      vmid: vmid,
+      name: name
+    };
+    const options = { params: this.createHttpParams(params)};
+    return this.putData(url, options);
+  }
+
   startServer(vmid: number): Observable<any> {
     const url = '/startServer';
     const params = {vmid: vmid};

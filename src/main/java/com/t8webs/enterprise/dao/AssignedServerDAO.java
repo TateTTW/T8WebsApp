@@ -12,9 +12,10 @@ import java.util.List;
 
 @Repository
 @Profile("dev")
-public class ServerDAO extends BaseDAO implements IServerDAO {
-    public ServerDAO() {
-        super.setTableName("Server");
+public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
+
+    public AssignedServerDAO() {
+        super.setTableName("AssignedServer");
     }
 
     /**
@@ -34,61 +35,6 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     }
 
     /**
-     * Method for fetching servers
-     *
-     * @param vmid int uniquely identifying a Server record
-     * @return Server with the given server name
-     */
-    @Override
-    public Server fetch(int vmid) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("vmid", vmid);
-        List<Server> servers = parse(select());
-
-        if(servers.isEmpty()){
-            return new Server();
-        }
-
-        return servers.get(0);
-    }
-
-    /**
-     * Method for fetching servers
-     *
-     * @param name String uniquely identifying a Server record
-     * @return Server with the given server name
-     */
-    @Override
-    public Server fetch(String name) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("name", name);
-        List<Server> servers = parse(select());
-
-        if(servers.isEmpty()){
-            return new Server();
-        }
-
-        return servers.get(0);
-    }
-
-    /**
-     * Method for fetching an unassigned server
-     *
-     * @return Server available to be assigned
-     */
-    @Override
-    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
-        addWhere("name", "");
-        addWhere("username", "");
-
-        List<Server> servers = parse(select());
-
-        if(servers.isEmpty()){
-            return new Server();
-        }
-
-        return servers.get(0);
-    }
-
-    /**
      * Method for checking whether a record exists for the given server name
      *
      * @param name String uniquely identifying a server by name
@@ -101,9 +47,19 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     }
 
     /**
-     * Method for fetching servers assigned to a user
+     * Method for fetching all assigned servers
      *
-     * @param username String uniquely identifying a UserAccount record
+     * @return List of all assigned servers
+     */
+    @Override
+    public List<Server> fetchAll() throws SQLException, IOException, ClassNotFoundException {
+        return parse(select());
+    }
+
+    /**
+     * Method for fetching all servers assigned to a user
+     *
+     * @param username String uniquely identifying a user
      * @return List of Servers assigned to the given user
      */
     @Override
@@ -131,7 +87,7 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     }
 
     /**
-     * Method for deleting a distinct UserAccount record from the database
+     * Method for deleting an assigned server record
      *
      * @param vmid int uniquely identifying a Server
      * @return boolean indicating a successful delete
@@ -151,11 +107,9 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
     @Override
     public boolean update(Server server) throws SQLException, IOException, ClassNotFoundException {
         setColumnValue("name", server.getName());
-        setColumnValue("username", server.getUsername());
-        setColumnValue("ipAddress", server.getIpAddress());
         addWhere("vmid", server.getVmid());
 
-        return false;
+        return update();
     }
 
     /**
@@ -170,7 +124,7 @@ public class ServerDAO extends BaseDAO implements IServerDAO {
             Server server = new Server();
             server.setName((String) valuesMap.get("name"));
             server.setUsername((String) valuesMap.get("username"));
-            server.setIpAddress((String) valuesMap.get("idAddress"));
+            server.setIpAddress((String) valuesMap.get("ipAddress"));
             server.setVmid((Integer) valuesMap.get("vmid"));
             server.setFound(true);
             servers.add(server);

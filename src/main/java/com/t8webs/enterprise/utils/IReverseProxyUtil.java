@@ -1,13 +1,16 @@
 package com.t8webs.enterprise.utils;
 
-import com.t8webs.enterprise.dto.Server;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public interface IReverseProxyUtil {
-    boolean configServer(Server server);
+    boolean reconfigure() throws ClassNotFoundException, SQLException, ReverseProxyUtil.ProxyConfigLockedException, IOException;
 
     boolean syncRemoteCfg();
 
     boolean reloadService();
 
-    boolean addUpdateServerName(Server server);
+    boolean deleteLocalCfg();
+
+    boolean buildLocalCfgFile() throws SQLException, IOException, ClassNotFoundException, ReverseProxyUtil.ProxyConfigLockedException;
 }

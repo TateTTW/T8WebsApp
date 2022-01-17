@@ -61,7 +61,14 @@ public class BaseDAO {
             this.whereCondition.append(" AND ");
         }
 
-        this.whereCondition.append(column).append(" = '").append(value).append("'");
+        this.whereCondition.append(column);
+
+        if(value.equalsIgnoreCase("NULL")){
+            this.whereCondition.append(" IS NULL");
+        } else {
+            this.whereCondition.append(" = '").append(value).append("'");
+        }
+
     }
 
     /**

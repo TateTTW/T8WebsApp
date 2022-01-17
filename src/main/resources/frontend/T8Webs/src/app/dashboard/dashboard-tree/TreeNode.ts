@@ -22,12 +22,22 @@ export class NodeType {
 
   private constructor(public readonly id: number, public readonly displayName: string) { }
 
-  static findNodeType(typeName: number | null): NodeType {
-    switch (typeName) {
+  static findNodeTypeById(typeId: number | null): NodeType {
+    switch (typeId) {
       case NodeType.ServerGroup.id: return NodeType.ServerGroup;
       case NodeType.BalancerGroup.id: return NodeType.BalancerGroup
       case NodeType.Server.id: return NodeType.Server;
       case NodeType.LoadBalancer.id: return NodeType.LoadBalancer;
+      default: return NodeType.None;
+    }
+  }
+
+  static findNodeTypeByName(typeName: string | null): NodeType {
+    switch (typeName) {
+      case NodeType.ServerGroup.displayName: return NodeType.ServerGroup;
+      case NodeType.BalancerGroup.displayName: return NodeType.BalancerGroup
+      case NodeType.Server.displayName: return NodeType.Server;
+      case NodeType.LoadBalancer.displayName: return NodeType.LoadBalancer;
       default: return NodeType.None;
     }
   }

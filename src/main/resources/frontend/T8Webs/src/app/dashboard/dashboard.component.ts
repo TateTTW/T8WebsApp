@@ -2,11 +2,12 @@ import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/c
 import {User} from "./dto/user";
 import {NodeType, TreeNode} from "./dashboard-tree/TreeNode";
 import {createSpinner, hideSpinner, showSpinner} from "@syncfusion/ej2-angular-popups";
-import {Job, JobAction, JobType} from "./server-dialog/Job";
+import {Job, JobAction} from "./server-dialog/Job";
 import {ServerDialogComponent} from "./server-dialog/server-dialog.component";
 import {DashboardService} from "./dashboard.service";
 import {Subscription} from "rxjs";
 import {DialogUtility} from '@syncfusion/ej2-popups';
+import {DashboardTreeComponent} from "./dashboard-tree/dashboard-tree.component";
 
 @Component({
   selector: 'dashboard',
@@ -22,6 +23,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private deleteServerSub: Subscription | undefined;
   // View Elements
   @ViewChild ('serverDialog') serverDialog!: ServerDialogComponent;
+  @ViewChild ('dashboardTree') dashboardTree!: DashboardTreeComponent;
 
   user: User | undefined;
   selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
@@ -87,7 +89,30 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  processJob(job: Job) {
+  doJob(job: Job) {
+    if(job.action == JobAction.Add || job.action == JobAction.Rename){
+      this.processJob(job);
+    }  else {
+      this.confirmJob(job);
+    }
+  }
+
+  private confirmJob(job: Job) {
+    const dialog = DialogUtility.confirm({
+      title: "Confirm",
+      content: "Are you sure you want to " + job.action + " " + job.type + "?",
+      okButton: {
+        text: "Continue",
+        click: () => {
+          this.processJob(job);
+          dialog.close();
+        }
+      },
+      showCloseIcon: true
+    });
+  }
+
+  private processJob(job: Job) {
     switch (job.action) {
       case JobAction.Add:
       case JobAction.Rename:
@@ -146,8 +171,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private handleSuccessfulJob(job: Job, data: any) {
-    const status = data?.status;
 
+    if(job.action == JobAction.Delete){
+      this.selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+      this.dashboardTree.refresh();
+    }
+
+    const status = data?.status;
     if(status && job.vmid == this.selectedTreeNode.id){
       this.selectedTreeNode = new TreeNode(this.selectedTreeNode.id, this.selectedTreeNode.name, status, this.selectedTreeNode.type);
     }

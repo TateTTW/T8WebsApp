@@ -55,23 +55,6 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
   //   }]
   // }]
 
-  // public treeData: Object[] = [{
-  //   "id": "0",
-  //   "name": "Servers",
-  //   "expanded": true,
-  //   "hasAttributes": {
-  //     "type": 0
-  //   },
-  //   "subChild": [{
-  //     "id": "128",
-  //     "name": "tvtracker",
-  //     "hasAttributes": {
-  //       "type": 1,
-  //       "status": ""
-  //     }
-  //   }]
-  // }]
-
   //[
   //   { id: '0', name: 'Servers', expanded: true, hasAttribute:{type: 0},
   //     subChild: [
@@ -121,11 +104,29 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     this.serverStatusSub?.unsubscribe();
   }
 
-  public refresh(): void {
+  public refresh(job?: Job): void {
+    //this.refreshHandler(this.treeData, job)
     this.getServersSub = this.dashboardService.getServers().subscribe(
-      data => this.treeData = data ?? [],
+      data => this.refreshHandler(data, job),
       error => console.log(error)
-    )
+    );
+  }
+
+  private refreshHandler(data: any[], job?: Job) {
+    this.treeData = data ?? [];
+
+    setTimeout(()=> {
+      if(job && job.vmid > 0) {
+        const node = this.treeView.getNode(job.vmid.toString());
+        if(node){
+          this.treeView.selectedNodes = [job.vmid.toString()];
+
+          const nodeType = NodeType.findNodeTypeByName(job.type);
+          const treeNode = new TreeNode(job.vmid, node['text']?.toString() ?? "", "", nodeType);
+          this.nodeSelection.emit(treeNode);
+        }
+      }
+    },2000);
   }
 
   private getServerStatus(vmid: number){
@@ -174,7 +175,7 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
 
     if(id && !isNaN(parseInt(id)) && type && !isNaN(parseInt(type))){
       const nodeId = parseInt(id);
-      const nodeType = NodeType.findNodeType(parseInt(type));
+      const nodeType = NodeType.findNodeTypeById(parseInt(type));
       const treeNode = new TreeNode(nodeId, text, status, nodeType);
       this.nodeSelection.emit(treeNode);
     }
@@ -191,9 +192,9 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     let nodeType = NodeType.None;
 
     if(!node['parentID']){
-      nodeType = NodeType.findNodeType(nodeId);
+      nodeType = NodeType.findNodeTypeById(nodeId);
     } else if (!isNaN(parseInt(<string>node['parentID']))) {
-      nodeType = NodeType.findNodeType(parseInt(<string>node['parentID']));
+      nodeType = NodeType.findNodeTypeById(parseInt(<string>node['parentID']));
     }
 
     this.doJob.emit({

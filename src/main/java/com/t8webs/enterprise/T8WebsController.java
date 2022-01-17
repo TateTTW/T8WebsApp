@@ -3,9 +3,7 @@ package com.t8webs.enterprise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.service.IServerService;
-import com.t8webs.enterprise.service.ServerService;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 
 @RestController
 public class T8WebsController {
@@ -47,12 +44,18 @@ public class T8WebsController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
-            serverService.assignUserServer(user.getAttribute("email"), serverName);
+            ObjectNode responseNode = serverService.assignUserServer(user.getAttribute("email"), serverName);
+            if(responseNode.get("success").booleanValue()){
+                return new ResponseEntity(responseNode, headers, HttpStatus.OK);
+            }
+            else if (responseNode.has("error")) {
+                return new ResponseEntity(responseNode.get("error"), headers, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } catch (Exception e) {
-            return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
         }
 
-        return new ResponseEntity(headers, HttpStatus.OK);
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @DeleteMapping("/deleteServer")
@@ -62,6 +65,22 @@ public class T8WebsController {
 
         try {
             if(serverService.deleteVM(user.getAttribute("email"), vmid)){
+                return new ResponseEntity(headers, HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PutMapping("/renameServer")
+    public ResponseEntity renameServer(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="vmid") int vmid, @RequestParam(value="name") String serverName) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            if(serverService.renameServer(user.getAttribute("email"), vmid, serverName)){
                 return new ResponseEntity(headers, HttpStatus.OK);
             }
         } catch (Exception e) {

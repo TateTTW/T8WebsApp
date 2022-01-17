@@ -18,21 +18,15 @@ import java.util.List;
  */
 @Repository
 @Profile("test")
-public class ServerDAOStub implements IServerDAO {
-    private static HashMap<Integer, Server> servers;
+public class AssignedServerDAOStub implements IAssignedServerDAO {
+    private static HashMap<Integer, Server> servers = new HashMap<>();
     static {
-        servers = new HashMap<>();
-        for(int i=120; i<=130; i++){
+        for(int i=120; i<=122; i++){
             Server server = new Server();
             server.setVmid(i);
             server.setIpAddress("192.168.90."+i);
-            if(i==128){
-                server.setUsername("tatettw@gmail.com");
-                server.setName("T8Server1");
-            } else {
-                server.setUsername("");
-                server.setName("");
-            }
+            server.setUsername("test@domain.com");
+            server.setName("T8Server"+i);
             server.setFound(true);
             servers.put(server.getVmid(), server);
         }
@@ -56,55 +50,6 @@ public class ServerDAOStub implements IServerDAO {
         return true;
     }
 
-    /**
-     * Method for fetching servers
-     *
-     * @param vmid int uniquely identifying a Server record
-     * @return Server with the given server name
-     */
-    @Override
-    public Server fetch(int vmid) throws SQLException, IOException, ClassNotFoundException {
-        Server server = servers.get(vmid);
-
-        if(server != null && server.isFound()){
-            return server;
-        }
-
-        return new Server();
-    }
-
-    /**
-     * Method for fetching servers
-     *
-     * @param name String uniquely identifying a Server record
-     * @return Server with the given server name
-     */
-    @Override
-    public Server fetch(String name) throws SQLException, IOException, ClassNotFoundException {
-        for(Server server: servers.values()){
-            if(server.getName().equals(name)){
-                return server;
-            }
-        }
-
-        return new Server();
-    }
-
-    /**
-     * Method for fetching an unassigned server
-     *
-     * @return Server available to be assigned
-     */
-    @Override
-    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
-        for(Server server: servers.values()){
-            if(server.getName().isEmpty() && server.getUsername().isEmpty()){
-                return server;
-            }
-        }
-
-        return new Server();
-    }
 
     /**
      * Method for checking whether a record exists for the given server name
@@ -121,6 +66,16 @@ public class ServerDAOStub implements IServerDAO {
         }
 
         return false;
+    }
+
+    /**
+     * Method for fetching all assigned servers
+     *
+     * @return List of all assigned servers
+     */
+    @Override
+    public List<Server> fetchAll() throws SQLException, IOException, ClassNotFoundException {
+        return new ArrayList<>(servers.values());
     }
 
     /**
@@ -158,7 +113,7 @@ public class ServerDAOStub implements IServerDAO {
     }
 
     /**
-     * Method for deleting a distinct UserAccount record from the database
+     * Method for deleting an assigned server record
      *
      * @param vmid int uniquely identifying a Server
      * @return boolean indicating a successful delete

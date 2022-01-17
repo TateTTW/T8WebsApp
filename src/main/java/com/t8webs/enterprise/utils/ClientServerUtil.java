@@ -3,7 +3,12 @@ package com.t8webs.enterprise.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
+import com.t8webs.enterprise.dao.IAssignedServerDAO;
+import com.t8webs.enterprise.dao.IAvailableServerDAO;
+import com.t8webs.enterprise.dto.Server;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,7 +16,10 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Properties;
 
 @Component
@@ -19,6 +27,10 @@ public class ClientServerUtil implements IClientServerUtil {
 
     @Autowired
     ISShUtils sshUtils;
+    @Autowired
+    IAvailableServerDAO availableServerDAO;
+    @Autowired
+    IAssignedServerDAO assignedServerDAO;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -42,6 +54,28 @@ public class ClientServerUtil implements IClientServerUtil {
     private static String stopBuildCmd = properties.getProperty("stopBuildCmd");
     private static String runBuildCmd = properties.getProperty("runBuildCmd");
     private static String remoteBuildFile = properties.getProperty("remoteBuildFile");
+
+    @Override
+    @Retryable(maxAttempts=18, value=SQLIntegrityConstraintViolationException.class, backoff=@Backoff(delay = 500))
+    public Server assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException {
+        Server server = availableServerDAO.fetchAvailable();
+
+        if(!server.isFound()){
+            return server;
+        }
+
+        server.setUsername(username);
+        server.setName(serverName);
+
+        // throws SQLIntegrityConstraintViolationException when another user is assigned server first
+        if(!assignedServerDAO.save(server)){
+            return new Server();
+        }
+
+        availableServerDAO.delete(server.getVmid());
+
+        return server;
+    }
 
     @Override
     public boolean updateServerIp(String oldIp, String newIp) {

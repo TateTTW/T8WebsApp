@@ -27,6 +27,7 @@ export class Job {
       case JobAction.Stop: return JobAction.Stop;
       case JobAction.Reboot: return JobAction.Reboot;
       case JobAction.Rename: return JobAction.Rename;
+      case JobAction.Delete: return JobAction.Delete;
       default: return JobAction.None;
     }
   }
