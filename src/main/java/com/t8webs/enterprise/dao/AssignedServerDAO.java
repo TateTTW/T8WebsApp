@@ -30,6 +30,7 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
         setColumnValue("username", server.getUsername());
         setColumnValue("vmid", server.getVmid());
         setColumnValue("ipAddress", server.getIpAddress());
+        setColumnValue("dnsId", server.getDnsId());
 
         return insert();
     }
@@ -107,6 +108,7 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
     @Override
     public boolean update(Server server) throws SQLException, IOException, ClassNotFoundException {
         setColumnValue("name", server.getName());
+        setColumnValue("dnsId", server.getDnsId());
         addWhere("vmid", server.getVmid());
 
         return update();
@@ -125,6 +127,7 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
             server.setName((String) valuesMap.get("name"));
             server.setUsername((String) valuesMap.get("username"));
             server.setIpAddress((String) valuesMap.get("ipAddress"));
+            server.setDnsId((String) valuesMap.get("dnsId"));
             server.setVmid((Integer) valuesMap.get("vmid"));
             server.setFound(true);
             servers.add(server);

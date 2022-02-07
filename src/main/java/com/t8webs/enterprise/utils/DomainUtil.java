@@ -4,14 +4,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
+import com.t8webs.enterprise.dao.IAssignedServerDAO;
+import com.t8webs.enterprise.dto.Server;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
+import kong.unirest.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.Properties;
 
-public class DomainUtil {
+@Component
+public class DomainUtil implements IDomainUtil {
+
+    @Autowired
+    IAssignedServerDAO assignedServerDAO;
 
     private static Properties properties;
     static {
@@ -23,40 +34,77 @@ public class DomainUtil {
         }
     }
 
-    /**
-     * @param domainName to remove
-     * @return
-     */
-    public static boolean removeDomain(String domainName) {
-        HttpResponse<JsonNode> response = Unirest.delete(properties.getProperty("domainDeleteURL") + domainName.trim())
-                .header("Authorization", properties.getProperty("ssoKey"))
+    private static String authEmail = properties.getProperty("authEmail");
+    private static String authKey = properties.getProperty("authKey");
+    private static String zoneId = properties.getProperty("zoneId");
+    private static String domainName = properties.getProperty("domainName");
+    private static String rootDomainId = properties.getProperty("rootDomainId");
+    private static String addDomainUrl = properties.getProperty("addDomainUrl");
+    private static String dnsRecordUrl = properties.getProperty("dnsRecordUrl");
+
+    @Override
+    public boolean deleteDnsRecord(String domainId) {
+        String url = MessageFormat.format(dnsRecordUrl, zoneId, domainId);
+
+        HttpResponse<JsonNode> response = Unirest.delete(url)
+                .header("X-Auth-Email", authEmail)
+                .header("X-Auth-Key", authKey)
                 .header("Content-Type", "application/json")
                 .asJson();
 
         return response.getStatus() == 200;
     }
 
-    /**
-     * @param domainName to create
-     * @return
-     */
-    public static boolean createDomain(String domainName) {
+    @Override
+    public boolean renameDnsRecord(String domainName, String domainId) {
+
+        String url = MessageFormat.format(dnsRecordUrl, zoneId, domainId);
+
         ObjectMapper mapper = new ObjectMapper();
-
-        ArrayNode arrayNode = mapper.createArrayNode();
         ObjectNode jsonNode = mapper.createObjectNode();
-        jsonNode.put("data", properties.getProperty("domainIP"));
         jsonNode.put("name", domainName.trim());
-        jsonNode.put("type", "A");
-        jsonNode.put("ttl", 6000);
-        arrayNode.add(jsonNode);
 
-        HttpResponse<JsonNode> response = Unirest.patch(properties.getProperty("domainPatchURL"))
-                .header("Authorization", properties.getProperty("ssoKey"))
+        HttpResponse<JsonNode> response = Unirest.patch(url)
+                .header("X-Auth-Email", authEmail)
+                .header("X-Auth-Key", authKey)
                 .header("Content-Type", "application/json")
-                .body(arrayNode.toPrettyString())
+                .body(jsonNode.toPrettyString())
                 .asJson();
 
         return response.getStatus() == 200;
+    }
+
+    @Override
+    public String addDnsRecord(String domainName) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        ObjectNode jsonNode = mapper.createObjectNode();
+        jsonNode.put("content", DomainUtil.domainName);
+        jsonNode.put("name", domainName.trim());
+        jsonNode.put("type", "CNAME");
+        jsonNode.put("ttl", 1);
+        jsonNode.put("proxied", true);
+
+        String url = MessageFormat.format(addDomainUrl, zoneId);
+
+        HttpResponse<JsonNode> response = Unirest.post(url)
+                .header("X-Auth-Email", authEmail)
+                .header("X-Auth-Key", authKey)
+                .header("Content-Type", "application/json")
+                .body(jsonNode.toPrettyString())
+                .asJson();
+
+        if(response.getStatus() == 200
+                && response.getBody() != null
+                && response.getBody().getObject() != null
+                && response.getBody().getObject().has("result")
+                && response.getBody().getObject().getJSONObject("result") != null
+                && response.getBody().getObject().getJSONObject("result").has("id")
+                && response.getBody().getObject().getJSONObject("result").getString("id") != null)
+        {
+            return response.getBody().getObject().getJSONObject("result").getString("id");
+        }
+
+        return "";
     }
 }

@@ -20,8 +20,6 @@ public class AvailableServerDAOStub implements IAvailableServerDAO{
             Server server = new Server();
             server.setVmid(i);
             server.setIpAddress("192.168.90."+i);
-            server.setUsername("");
-            server.setName("");
             server.setFound(true);
             servers.put(server.getVmid(), server);
         }

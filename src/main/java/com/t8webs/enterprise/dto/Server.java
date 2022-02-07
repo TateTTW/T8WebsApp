@@ -11,5 +11,6 @@ public class Server {
     private String name = "";
     private String username = "";
     private String ipAddress = "";
+    private String dnsId = "";
     private boolean isFound;
 }

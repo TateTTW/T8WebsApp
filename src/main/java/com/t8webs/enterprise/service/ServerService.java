@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 @Service
 public class ServerService implements IServerService {
     @Autowired
+    IDomainUtil domainUtil;
+    @Autowired
     IAvailableServerDAO availableServerDAO;
     @Autowired
     IAssignedServerDAO assignedServerDAO;
@@ -53,6 +55,20 @@ public class ServerService implements IServerService {
 
         if(!server.isFound()){
             node.put("error", "Could not allocate an available server.");
+            return node;
+        }
+
+        // Add a dns record for the server
+        String dnsId = domainUtil.addDnsRecord(server.getName());
+        if(dnsId.isEmpty()){
+            node.put("error", "Failed to create server dns record.");
+            return node;
+        }
+
+        // Save dnsId to database
+        server.setDnsId(dnsId);
+        if(!assignedServerDAO.update(server)){
+            node.put("error", "Failed to update server dnsId.");
             return node;
         }
 
@@ -146,8 +162,11 @@ public class ServerService implements IServerService {
         // Set new server name
         server.setName(serverName);
 
-        // Update database record and then update proxy configuration
-        if (assignedServerDAO.update(server) && reverseProxyUtil.reconfigure()) {
+        // Update database record, update proxy configuration, & update dns record
+        if (assignedServerDAO.update(server)
+            && reverseProxyUtil.reconfigure()
+            && domainUtil.renameDnsRecord(serverName, server.getDnsId()))
+        {
             return true;
         }
 
@@ -242,7 +261,8 @@ public class ServerService implements IServerService {
             && proxmoxUtil.deleteVM(vmid)
             && assignedServerDAO.delete(vmid)
             && availableServerDAO.save(server)
-            && reverseProxyUtil.reconfigure())
+            && reverseProxyUtil.reconfigure()
+            && domainUtil.deleteDnsRecord(server.getDnsId()))
         {
             return true;
         }
