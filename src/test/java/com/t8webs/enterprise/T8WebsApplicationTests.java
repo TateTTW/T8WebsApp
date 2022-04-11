@@ -22,8 +22,6 @@ class T8WebsApplicationTests {
     @Autowired
     IProxmoxUtil proxmoxUtil;
     @Autowired
-    IReverseProxyUtil reverseProxyUtil;
-    @Autowired
     IDomainUtil domainUtil;
 
     @Test
@@ -31,7 +29,7 @@ class T8WebsApplicationTests {
     }
 
     @Test
-    void addDomain() {
-
+    void configProxy() throws ClassNotFoundException, SQLException, IOException {
+//        reverseProxyUtil.buildLocalCfgFile();
     }
 }

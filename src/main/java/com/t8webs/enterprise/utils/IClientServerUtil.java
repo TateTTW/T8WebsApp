@@ -14,11 +14,5 @@ public interface IClientServerUtil {
 
     boolean deployBuild(String ipAddress, MultipartFile multipartFile);
 
-    boolean editIpCfgFile(String newIpAddress);
-
-    void resetLocalIpCfg();
-
-    boolean replaceRemoteIpCfg(String ipAddress);
-
-    String updateBuildFile(String ipAddress, MultipartFile multipartFile);
+    boolean updateBuildFile(String ipAddress, MultipartFile multipartFile);
 }

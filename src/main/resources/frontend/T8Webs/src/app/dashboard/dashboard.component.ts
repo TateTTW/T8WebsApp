@@ -14,7 +14,7 @@ import {DashboardTreeComponent} from "./dashboard-tree/dashboard-tree.component"
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.less']
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DashboardComponent implements OnInit, OnDestroy {
   // Subscriptions
   private serverStatusSub: Subscription | undefined;
   private startServerSub: Subscription | undefined;
@@ -32,13 +32,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void { }
 
-  ngAfterViewInit(): void {
-    setTimeout((()=>{
-      const spinnerTarget = document.querySelector('#spinnerDiv') as HTMLElement;
-      createSpinner({ target:spinnerTarget, width: '70px' });
-    }).bind(this), 1000);
-  }
-
   ngOnDestroy(): void {
     this.startServerSub?.unsubscribe();
     this.stopServerSub?.unsubscribe();
@@ -53,12 +46,26 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   showSpinner() {
     const spinnerTarget = document.querySelector('#spinnerDiv') as HTMLElement;
+    if (!this.spinnerExist()) {
+      createSpinner({ target:spinnerTarget, width: '70px' });
+    }
     showSpinner(spinnerTarget);
   }
 
   hideSpinner() {
+    if (this.spinnerExist()) {
+      const spinnerTarget = document.querySelector('#spinnerDiv') as HTMLElement;
+      hideSpinner(spinnerTarget);
+    }
+  }
+
+  private spinnerExist(): boolean {
     const spinnerTarget = document.querySelector('#spinnerDiv') as HTMLElement;
-    hideSpinner(spinnerTarget);
+    const style = Array.from(spinnerTarget.children).reduce((acc: string[], node) => {
+      node.classList.forEach(style => acc.push(style));
+      return acc;
+    }, []);
+    return style.includes("e-spinner-pane");
   }
 
   nodeSelection(treeNode: TreeNode) {

@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +32,9 @@ public class ServerService implements IServerService {
     @Autowired
     IClientServerUtil clientServerUtil;
     @Autowired
-    IReverseProxyUtil reverseProxyUtil;
+    ISShUtils sshUtils;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private ObjectMapper mapper = new ObjectMapper();
     /**
@@ -39,13 +43,13 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException, ReverseProxyUtil.ProxyConfigLockedException {
+    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         ObjectNode node = mapper.createObjectNode();
         node.put("error", "");
         node.put("success", false);
 
         // Confirm that the server name can be used
-        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
+        if(!serverNameConforms(serverName) || assignedServerDAO.fetchByUsername(username).size() > 1 || assignedServerDAO.existsBy(serverName.trim())){
             node.put("error", "The server name, " + serverName + ", is not available.");
             return node;
         }
@@ -89,10 +93,7 @@ public class ServerService implements IServerService {
         proxmoxUtil.shutdownVM(server.getVmid());
 
         // Update proxy config to route traffic to the server
-        if(!reverseProxyUtil.reconfigure()) {
-            node.put("error", "Failed to configure server routing.");
-            return node;
-        }
+        executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
 
         // Confirm server is stopped
         if(!proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid())){
@@ -147,7 +148,7 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException, ReverseProxyUtil.ProxyConfigLockedException {
+    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
         // Confirm that the server name can be used
         if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
             return false;
@@ -163,10 +164,9 @@ public class ServerService implements IServerService {
         server.setName(serverName);
 
         // Update database record, update proxy configuration, & update dns record
-        if (assignedServerDAO.update(server)
-            && reverseProxyUtil.reconfigure()
-            && domainUtil.renameDnsRecord(serverName, server.getDnsId()))
+        if (assignedServerDAO.update(server) && domainUtil.renameDnsRecord(serverName, server.getDnsId()))
         {
+            executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
             return true;
         }
 
@@ -253,7 +253,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException, ReverseProxyUtil.ProxyConfigLockedException {
+    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()
@@ -261,9 +261,9 @@ public class ServerService implements IServerService {
             && proxmoxUtil.deleteVM(vmid)
             && assignedServerDAO.delete(vmid)
             && availableServerDAO.save(server)
-            && reverseProxyUtil.reconfigure()
             && domainUtil.deleteDnsRecord(server.getDnsId()))
         {
+            executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
             return true;
         }
 

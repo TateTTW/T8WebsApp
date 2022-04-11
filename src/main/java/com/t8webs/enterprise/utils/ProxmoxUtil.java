@@ -109,7 +109,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=18, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    @Retryable(maxAttempts=24, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean reachedState(State expectedState, int vmid) throws InvalidVmStateException {
 
         if(isVmLocked(vmid)){

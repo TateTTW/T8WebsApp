@@ -1,7 +1,6 @@
 package com.t8webs.enterprise.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import com.t8webs.enterprise.dao.IAvailableServerDAO;
@@ -13,13 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.text.MessageFormat;
-import java.util.List;
 import java.util.Properties;
 
 @Component
@@ -49,7 +43,6 @@ public class ClientServerUtil implements IClientServerUtil {
     private static String clientUser = properties.getProperty("clientUser");
     private static String clientPass = properties.getProperty("clientPass");
     private static String localIpCfg = properties.getProperty("localIpCfg");
-    private static String localIpCfgBk = properties.getProperty("localIpCfgBk");
     private static String remoteIpCfg = properties.getProperty("remoteIpCfg");
     private static String stopBuildCmd = properties.getProperty("stopBuildCmd");
     private static String runBuildCmd = properties.getProperty("runBuildCmd");
@@ -79,55 +72,28 @@ public class ClientServerUtil implements IClientServerUtil {
 
     @Override
     public boolean updateServerIp(String oldIp, String newIp) {
-        boolean success = false;
+        final String newLine = "      addresses: [" + newIp.trim() + "/24]";
 
-        if(editIpCfgFile(newIp)){
-            success = replaceRemoteIpCfg(oldIp);
-            resetLocalIpCfg();
-        }
-
-        return success;
-    }
-
-    @Override
-    public boolean deployBuild(String ipAddress, MultipartFile multipartFile) {
-        boolean success = false;
-        String buildName = updateBuildFile(ipAddress, multipartFile);
-
-        if(!buildName.isEmpty()) {
-            if(this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)){
-                success = this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, MessageFormat.format(runBuildCmd, buildName));
-            }
-        }
-        return success;
-    }
-
-    @Override
-    public boolean editIpCfgFile(String newIpAddress) {
-        final String newLine = "      addresses: [" + newIpAddress.trim() + "/24]";
-
-        File orgFile  = new File(localIpCfg);
         File tempFile = null;
 
         BufferedReader br = null;
         BufferedWriter bw = null;
 
-        try {
+        try (InputStream inputStream = getClass().getResourceAsStream(localIpCfg)) {
             tempFile = File.createTempFile("temp_ip_config", ".yaml");
 
-            br = new BufferedReader(new FileReader(orgFile));
+            br = new BufferedReader(new InputStreamReader(inputStream));
             bw = new BufferedWriter(new FileWriter(tempFile));
 
             String line;
-
             while ((line = br.readLine()) != null) {
                 if (line.contains("#addressesPlaceholder")){
                     line = newLine;
                 }
                 bw.write(line+"\n");
             }
-
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         } finally {
             try {
@@ -141,41 +107,24 @@ public class ClientServerUtil implements IClientServerUtil {
                 }
             } catch (IOException e) { }
         }
-
-        if(orgFile != null){
-            orgFile.delete();
-        }
-
-        if(tempFile != null){
-            tempFile.renameTo(orgFile);
-        }
-
-        return true;
+        // TODO: 4/10/2022 delete temp file after tranfser
+        return sshUtils.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
     }
 
     @Override
-    public void resetLocalIpCfg() {
-        Path destPath = new File(localIpCfg).toPath();
-        Path srcPath = new File(localIpCfgBk).toPath();
-        try {
-            Files.copy(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public boolean deployBuild(String ipAddress, MultipartFile multipartFile) {
+        return (this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)
+                        && updateBuildFile(ipAddress, multipartFile)
+                        && this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, runBuildCmd));
     }
 
     @Override
-    public boolean replaceRemoteIpCfg(String ipAddress) {
-        return sshUtils.doSecureFileTransfer(rootUser, rootPass, ipAddress, localIpCfg, remoteIpCfg);
-    }
-
-    @Override
-    public String updateBuildFile(String ipAddress, MultipartFile multipartFile) {
+    public boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) {
 
         boolean success = false;
 
         if(multipartFile == null) {
-            return "";
+            return false;
         }
 
         File tempFile = null;
@@ -186,6 +135,7 @@ public class ClientServerUtil implements IClientServerUtil {
 
             multipartFile.transferTo(tempFile);
 
+            // TODO: 4/10/2022 Delete temp file after transfer 
             success = sshUtils.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
 
         } catch (IOException e) {
@@ -196,10 +146,6 @@ public class ClientServerUtil implements IClientServerUtil {
             }
         }
 
-        if(success && tempFile != null) {
-            return tempFile.getName();
-        } else {
-            return "";
-        }
+        return success;
     }
 }

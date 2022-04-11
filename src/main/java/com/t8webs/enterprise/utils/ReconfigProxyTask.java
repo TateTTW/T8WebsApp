@@ -3,24 +3,17 @@ package com.t8webs.enterprise.utils;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import com.t8webs.enterprise.dto.Server;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.*;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
-@Component
-public class ReverseProxyUtil implements IReverseProxyUtil {
 
-    @Autowired
+public class ReconfigProxyTask implements IReconfigProxyTask, Runnable {
+
     ISShUtils sshUtils;
-    @Autowired
     IAssignedServerDAO assignedServerDAO;
 
     private static Properties properties;
@@ -34,7 +27,6 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
     }
 
     private static String domain = properties.getProperty("domainName");
-    private static String orgProxyCfg = properties.getProperty("orgProxyCfg");
     private static String localFile = properties.getProperty("localProxyCfg");
     private static String remoteFile = properties.getProperty("remoteProxyCfg");
     private static String proxyUser = properties.getProperty("proxyUser");
@@ -42,42 +34,48 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
     private static String proxyIpAddress = properties.getProperty("proxyIpAddress");
     private static String reloadCommand = properties.getProperty("proxyReloadCmd");
 
+    public ReconfigProxyTask(ISShUtils sshUtils, IAssignedServerDAO assignedServerDAO) {
+        this.sshUtils = sshUtils;
+        this.assignedServerDAO = assignedServerDAO;
+    }
+
+    /**
+     * When an object implementing interface {@code Runnable} is used
+     * to create a thread, starting the thread causes the object's
+     * {@code run} method to be called in that separately executing
+     * thread.
+     * <p>
+     * The general contract of the method {@code run} is that it may
+     * take any action whatsoever.
+     *
+     * @see Thread#run()
+     */
     @Override
-    public boolean reconfigure() throws ClassNotFoundException, SQLException, ProxyConfigLockedException, IOException {
-        boolean success = false;
+    public void run() {
+        this.reconfigure();
+    }
 
-        if(buildLocalCfgFile()) {
-            if(syncRemoteCfg()) {
-                if(reloadService()){
-                    success = true;
-                }
-            }
+    @Override
+    public boolean reconfigure() {
+        try {
+            return (rebuildCfgFile() && reloadService());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
+    }
 
-        deleteLocalCfg();
+    @Override
+    public boolean reloadService() throws InterruptedException {
+        boolean success = sshUtils.doSecureShellCmd(proxyUser, proxyPass, proxyIpAddress, reloadCommand);
+        // Random amount of time to allow the Reverse Proxy to reload its configuration
+        Thread.sleep(15000);
 
         return success;
     }
 
     @Override
-    public boolean syncRemoteCfg() {
-        return sshUtils.doSecureFileTransfer(proxyUser, proxyPass, proxyIpAddress, localFile, remoteFile);
-    }
-
-    @Override
-    public boolean reloadService() {
-        return sshUtils.doSecureShellCmd(proxyUser, proxyPass, proxyIpAddress, reloadCommand);
-    }
-
-    @Override
-    public boolean deleteLocalCfg() {
-        File localCfg = new File(localFile);
-        return localCfg.delete();
-    }
-
-    @Override
-    @Retryable(maxAttempts=60, value=ProxyConfigLockedException.class, backoff=@Backoff(delay = 1000))
-    public boolean buildLocalCfgFile() throws SQLException, ClassNotFoundException, IOException, ProxyConfigLockedException {
+    public boolean rebuildCfgFile() throws SQLException, ClassNotFoundException, IOException {
         // Create String containing a configuration line for each assigned server.
         StringBuilder newLines = new StringBuilder();
 
@@ -86,15 +84,13 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
             newLines.append("        use_backend " + server.getVmid() + " if { hdr(host) -i " + server.getName().trim() + "." + domain + " }\n");
         }
 
-        File orgCfg = new File(orgProxyCfg);
+        // Copy base proxy configuration to a temporary file
         File tempCfg = File.createTempFile("haproxy_",".cfg");
-
         BufferedWriter bw = new BufferedWriter(new FileWriter(tempCfg));
         BufferedReader br = null;
 
-        // Copies boilerplate proxy config file with out locking.
-        try (InputStream is = Files.newInputStream(orgCfg.toPath(), StandardOpenOption.READ)) {
-            InputStreamReader reader = new InputStreamReader(is, Charset.defaultCharset());
+        try {
+            InputStreamReader reader = new InputStreamReader(getClass().getResourceAsStream(localFile), Charset.defaultCharset());
             br = new BufferedReader(reader);
 
             String line;
@@ -116,20 +112,11 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
                 }
             } catch (IOException e) { }
         }
-
         // Append assigned server config lines to temp file
         FileWriter fw = new FileWriter(tempCfg, true);
         fw.write(newLines.toString());
         fw.close();
-
-        // This rename file method locks other threads utilizing this process until completed
-        if(!tempCfg.renameTo(new File(localFile))){
-            // Another thread is utilizing this method. Thrown Exception initiates another attempt at this process.
-            throw new ProxyConfigLockedException();
-        }
-
-        return true;
+        // Transfer file to the reverse proxy
+        return sshUtils.doSecureFileTransfer(proxyUser, proxyPass, proxyIpAddress, tempCfg.getPath(), remoteFile);
     }
-
-    public class ProxyConfigLockedException extends Exception { }
 }

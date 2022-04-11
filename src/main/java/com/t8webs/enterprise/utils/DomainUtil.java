@@ -1,20 +1,16 @@
 package com.t8webs.enterprise.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
-import com.t8webs.enterprise.dto.Server;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
-import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.Properties;
 
@@ -38,7 +34,6 @@ public class DomainUtil implements IDomainUtil {
     private static String authKey = properties.getProperty("authKey");
     private static String zoneId = properties.getProperty("zoneId");
     private static String domainName = properties.getProperty("domainName");
-    private static String rootDomainId = properties.getProperty("rootDomainId");
     private static String addDomainUrl = properties.getProperty("addDomainUrl");
     private static String dnsRecordUrl = properties.getProperty("dnsRecordUrl");
 
