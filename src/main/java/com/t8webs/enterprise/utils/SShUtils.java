@@ -55,32 +55,27 @@ public class SShUtils implements ISShUtils {
     public boolean doSecureFileTransfer(String user, String pass, String ipAddress, String localFile, String remoteFile) {
 
         Session jschSession = null;
-        ChannelSftp channelSftp = null;
+        ChannelSftp sftpChannel = null;
 
         try {
-
             JSch jsch = new JSch();
-            //jsch.setKnownHosts("/home/mkyong/.ssh/known_hosts");
+
             jschSession = jsch.getSession(user, ipAddress, 22);
             jschSession.setConfig(config);
             jschSession.setPassword(pass);
 
             jschSession.connect(10000);
 
-            Channel sftp = jschSession.openChannel("sftp");
-
-            sftp.connect(5000);
-
-            channelSftp = (ChannelSftp) sftp;
+            sftpChannel = (ChannelSftp)jschSession.openChannel("sftp");
+            sftpChannel.connect(5000);
 
             // transfer file from local to remote server
-            channelSftp.put(localFile, remoteFile);
+            sftpChannel.put(localFile, remoteFile);
 
             // download file from remote server to local
             // channelSftp.get(remoteFile, localFile);
 
-            channelSftp.exit();
-
+            sftpChannel.exit();
         } catch (SftpException | JSchException e) {
 
             e.printStackTrace();
@@ -90,8 +85,8 @@ public class SShUtils implements ISShUtils {
             if (jschSession != null) {
                 jschSession.disconnect();
             }
-            if (channelSftp != null) {
-                channelSftp.disconnect();
+            if (sftpChannel != null) {
+                sftpChannel.disconnect();
             }
         }
 

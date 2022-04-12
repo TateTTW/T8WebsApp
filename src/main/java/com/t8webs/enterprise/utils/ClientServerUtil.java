@@ -71,20 +71,15 @@ public class ClientServerUtil implements IClientServerUtil {
     }
 
     @Override
-    public boolean updateServerIp(String oldIp, String newIp) {
+    public boolean updateServerIp(String oldIp, String newIp) throws IOException {
         final String newLine = "      addresses: [" + newIp.trim() + "/24]";
 
-        File tempFile = null;
+        File tempFile = File.createTempFile("temp_ip_config", ".yaml");
 
-        BufferedReader br = null;
-        BufferedWriter bw = null;
-
-        try (InputStream inputStream = getClass().getResourceAsStream(localIpCfg)) {
-            tempFile = File.createTempFile("temp_ip_config", ".yaml");
-
-            br = new BufferedReader(new InputStreamReader(inputStream));
-            bw = new BufferedWriter(new FileWriter(tempFile));
-
+        try (InputStream inputStream = getClass().getResourceAsStream(localIpCfg);
+             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+             BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
+        ) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.contains("#addressesPlaceholder")){
@@ -92,60 +87,44 @@ public class ClientServerUtil implements IClientServerUtil {
                 }
                 bw.write(line+"\n");
             }
+
+            br.close();
+            bw.close();
+
+            return sshUtils.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
+
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         } finally {
-            try {
-                if(br != null){
-                    br.close();
-                }
-            } catch (IOException e) { }
-            try {
-                if(bw != null) {
-                    bw.close();
-                }
-            } catch (IOException e) { }
+            tempFile.delete();
         }
-        // TODO: 4/10/2022 delete temp file after tranfser
-        return sshUtils.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
     }
 
     @Override
-    public boolean deployBuild(String ipAddress, MultipartFile multipartFile) {
+    public boolean deployBuild(String ipAddress, MultipartFile multipartFile) throws IOException {
         return (this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)
                         && updateBuildFile(ipAddress, multipartFile)
                         && this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, runBuildCmd));
     }
 
     @Override
-    public boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) {
-
-        boolean success = false;
-
-        if(multipartFile == null) {
+    public boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) throws IOException {
+        if (multipartFile == null) {
             return false;
         }
 
-        File tempFile = null;
+        File tempFile = File.createTempFile("build_",".war");
 
         try {
-
-            tempFile = File.createTempFile("build_",".war");
-
             multipartFile.transferTo(tempFile);
-
-            // TODO: 4/10/2022 Delete temp file after transfer 
-            success = sshUtils.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
+            return sshUtils.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
 
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         } finally {
-            if(tempFile != null) {
-                tempFile.delete();
-            }
+            tempFile.delete();
         }
-
-        return success;
     }
 }

@@ -10,9 +10,9 @@ public interface IClientServerUtil {
 
     Server assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException;
 
-    boolean updateServerIp(String oldIp, String newIp);
+    boolean updateServerIp(String oldIp, String newIp) throws IOException;
 
-    boolean deployBuild(String ipAddress, MultipartFile multipartFile);
+    boolean deployBuild(String ipAddress, MultipartFile multipartFile) throws IOException;
 
-    boolean updateBuildFile(String ipAddress, MultipartFile multipartFile);
+    boolean updateBuildFile(String ipAddress, MultipartFile multipartFile) throws IOException;
 }

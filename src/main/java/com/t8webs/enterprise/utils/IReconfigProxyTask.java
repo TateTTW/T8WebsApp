@@ -8,5 +8,5 @@ public interface IReconfigProxyTask {
 
     boolean reloadService() throws InterruptedException;
 
-    boolean rebuildCfgFile() throws SQLException, IOException, ClassNotFoundException;
+    boolean rebuildCfgFile() throws ClassNotFoundException, IOException;
 }
