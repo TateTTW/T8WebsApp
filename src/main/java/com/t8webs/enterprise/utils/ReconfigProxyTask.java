@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Properties;
 
 
-public class ReconfigProxyTask implements IReconfigProxyTask, Runnable {
+public class ReconfigProxyTask implements Runnable {
 
     ISShUtils sshUtils;
     IAssignedServerDAO assignedServerDAO;
@@ -53,31 +53,28 @@ public class ReconfigProxyTask implements IReconfigProxyTask, Runnable {
         this.reconfigure();
     }
 
-    @Override
-    public boolean reconfigure() {
+    private boolean reconfigure() {
         try {
-            return (rebuildCfgFile() && reloadService());
+            return (sshUtils != null && assignedServerDAO != null && rebuildCfgFile() && reloadService());
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    @Override
-    public boolean reloadService() throws InterruptedException {
+    private boolean reloadService() throws InterruptedException {
         boolean success = sshUtils.doSecureShellCmd(proxyUser, proxyPass, proxyIpAddress, reloadCommand);
         // Random amount of time to allow the Reverse Proxy to reload its configuration
         Thread.sleep(15000);
         return success;
     }
 
-    @Override
-    public boolean rebuildCfgFile() throws IOException {
+    private boolean rebuildCfgFile() throws IOException {
         File tempCfg = File.createTempFile("haproxy_",".cfg");
         FileWriter fw = null;
 
         try(InputStream inputStream = getClass().getResourceAsStream(localFile);
-            FileOutputStream outputStream = new FileOutputStream(tempCfg);
+            FileOutputStream outputStream = new FileOutputStream(tempCfg)
         ) {
             // Copy base proxy configuration to a temporary file
             inputStream.transferTo(outputStream);
