@@ -14,8 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -116,11 +114,7 @@ public class ServerService implements IServerService {
         Pattern pattern = Pattern.compile("[^A-Za-z0-9]");
         Matcher matcher = pattern.matcher(serverName);
 
-        if(matcher.find()){
-            return false;
-        }
-
-        return true;
+        return !matcher.find();
     }
 
     // ProxmoxUtil 'retry' methods must be called from outside class
@@ -219,40 +213,27 @@ public class ServerService implements IServerService {
     public boolean startVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()
-            && proxmoxUtil.startVM(vmid)
-            && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid)){
-            return true;
-        }
-
-        return false;
+        return server.isFound()
+                && proxmoxUtil.startVM(vmid)
+                && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid);
     }
 
     @Override
     public boolean shutdownVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()
-            && proxmoxUtil.shutdownVM(vmid)
-            && proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, vmid)){
-            return true;
-        }
-
-        return false;
+        return server.isFound()
+                && proxmoxUtil.shutdownVM(vmid)
+                && proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, vmid);
     }
 
     @Override
     public boolean rebootVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()
-            && proxmoxUtil.rebootVM(vmid)
-            && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid))
-        {
-            return true;
-        }
-
-        return false;
+        return server.isFound()
+                && proxmoxUtil.rebootVM(vmid)
+                && proxmoxUtil.reachedState(ProxmoxUtil.State.RUNNING, vmid);
     }
 
     @Override
