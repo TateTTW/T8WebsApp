@@ -30,13 +30,13 @@ public class ServerService implements IServerService {
     @Autowired
     IProxmoxUtil proxmoxUtil;
     @Autowired
+    IReverseProxyUtil reverseProxyUtil;
+    @Autowired
     IClientServerUtil clientServerUtil;
     @Autowired
     ISShUtils sshUtils;
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
     /**
      * @param username    String user to assign a server to
      * @param serverName  String name to give server
@@ -93,7 +93,8 @@ public class ServerService implements IServerService {
         proxmoxUtil.shutdownVM(server.getVmid());
 
         // Update proxy config to route traffic to the server
-        executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
+        // TODO: 4/17/2022 check return value;
+        reverseProxyUtil.addHostEntry(server);
 
         // Confirm server is stopped
         if(!proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid())){
@@ -160,14 +161,16 @@ public class ServerService implements IServerService {
             return false;
         }
 
+        // Remove previous reverse proxy host config entry
+        reverseProxyUtil.deleteHostEntry(server);
+
         // Set new server name
         server.setName(serverName);
 
         // Update database record, update proxy configuration, & update dns record
         if (assignedServerDAO.update(server) && domainUtil.renameDnsRecord(serverName, server.getDnsId()))
         {
-            executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
-            return true;
+            return reverseProxyUtil.addHostEntry(server);
         }
 
         return false;
@@ -263,8 +266,7 @@ public class ServerService implements IServerService {
             && availableServerDAO.save(server)
             && domainUtil.deleteDnsRecord(server.getDnsId()))
         {
-            executor.execute(new ReconfigProxyTask(sshUtils, assignedServerDAO));
-            return true;
+            return reverseProxyUtil.deleteHostEntry(server);
         }
 
         return false;
