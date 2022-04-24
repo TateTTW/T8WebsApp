@@ -4,8 +4,6 @@ import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +36,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return boolean indicating a successful save
      */
     @Override
-    public boolean save(Server server) throws SQLException, IOException, ClassNotFoundException {
+    public boolean save(Server server) {
         if(servers.containsKey(server.getVmid())){
             return false;
         }
@@ -58,7 +56,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return boolean indicating whether a record exists for this server
      */
     @Override
-    public boolean existsBy(String name) throws SQLException, IOException, ClassNotFoundException {
+    public boolean existsBy(String name) {
         for(Server server: servers.values()){
             if(server.getName().equals(name)){
                 return true;
@@ -74,7 +72,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return List of all assigned servers
      */
     @Override
-    public List<Server> fetchAll() throws SQLException, IOException, ClassNotFoundException {
+    public List<Server> fetchAll() {
         return new ArrayList<>(servers.values());
     }
 
@@ -85,7 +83,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return List of Servers assigned to the given user
      */
     @Override
-    public List<Server> fetchByUsername(String username) throws SQLException, IOException, ClassNotFoundException {
+    public List<Server> fetchByUsername(String username) {
         List<Server> userServers = new ArrayList<Server>();
         for(Server server: servers.values()){
             if(server.getUsername().equals(username)){
@@ -102,7 +100,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return server record assigned to the user
      */
     @Override
-    public Server fetchUserServer(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
+    public Server fetchUserServer(String username, int vmid) {
         for(Server server: servers.values()){
             if(server.getVmid() == vmid && server.getUsername().equals(username)){
                 return server;
@@ -119,7 +117,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return boolean indicating a successful delete
      */
     @Override
-    public boolean delete(int vmid) throws SQLException, IOException, ClassNotFoundException {
+    public boolean delete(int vmid) {
         Server server = servers.get(vmid);
 
         if(server == null || !server.isFound()){
@@ -138,7 +136,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return boolean indicating a successful update
      */
     @Override
-    public boolean update(Server server) throws SQLException, IOException, ClassNotFoundException {
+    public boolean update(Server server) {
         if(servers.containsKey(server.getVmid())){
             servers.put(server.getVmid(), server);
             return true;

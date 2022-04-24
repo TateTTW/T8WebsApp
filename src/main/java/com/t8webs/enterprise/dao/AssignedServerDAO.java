@@ -4,19 +4,13 @@ import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 @Repository
 @Profile("dev")
-public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
-
-    public AssignedServerDAO() {
-        super.setTableName("AssignedServer");
-    }
+public class AssignedServerDAO implements IAssignedServerDAO {
 
     /**
      * Method for creating a new Server record in the database
@@ -25,14 +19,15 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return boolean indicating a successful save
      */
     @Override
-    public boolean save(Server server) throws SQLException, IOException, ClassNotFoundException {
-        setColumnValue("name", server.getName());
-        setColumnValue("username", server.getUsername());
-        setColumnValue("vmid", server.getVmid());
-        setColumnValue("ipAddress", server.getIpAddress());
-        setColumnValue("dnsId", server.getDnsId());
+    public boolean save(Server server) throws DbQuery.IntegrityConstraintViolationException {
+        DbQuery query = newQuery();
+        query.setColumnValue("name", server.getName());
+        query.setColumnValue("username", server.getUsername());
+        query.setColumnValue("vmid", server.getVmid());
+        query.setColumnValue("ipAddress", server.getIpAddress());
+        query.setColumnValue("dnsId", server.getDnsId());
 
-        return insert();
+        return query.insertAndThrow();
     }
 
     /**
@@ -42,9 +37,10 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return boolean indicating whether a record exists for this server
      */
     @Override
-    public boolean existsBy(String name) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("name", name);
-        return !select().isEmpty();
+    public boolean existsBy(String name) {
+        DbQuery query = newQuery();
+        query.addWhere("name", name);
+        return !query.select().isEmpty();
     }
 
     /**
@@ -53,8 +49,8 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return List of all assigned servers
      */
     @Override
-    public List<Server> fetchAll() throws SQLException, IOException, ClassNotFoundException {
-        return parse(select());
+    public List<Server> fetchAll() {
+        return parse(newQuery().select());
     }
 
     /**
@@ -64,9 +60,10 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return List of Servers assigned to the given user
      */
     @Override
-    public List<Server> fetchByUsername(String username) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("username", username);
-        return parse(select());
+    public List<Server> fetchByUsername(String username) {
+        DbQuery query = newQuery();
+        query.addWhere("username", username);
+        return parse(query.select());
     }
 
     /**
@@ -75,10 +72,11 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return server record assigned to the user
      */
     @Override
-    public Server fetchUserServer(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("vmid", vmid);
-        addWhere("username", username);
-        List<Server> servers = parse(select());
+    public Server fetchUserServer(String username, int vmid) {
+        DbQuery query = newQuery();
+        query.addWhere("vmid", vmid);
+        query.addWhere("username", username);
+        List<Server> servers = parse(query.select());
 
         if(servers.isEmpty()){
             return new Server();
@@ -94,9 +92,10 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return boolean indicating a successful delete
      */
     @Override
-    public boolean delete(int vmid) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("vmid", vmid);
-        return delete();
+    public boolean delete(int vmid) {
+        DbQuery query = newQuery();
+        query.addWhere("vmid", vmid);
+        return query.delete();
     }
 
     /**
@@ -106,12 +105,22 @@ public class AssignedServerDAO extends BaseDAO implements IAssignedServerDAO {
      * @return boolean indicating a successful update
      */
     @Override
-    public boolean update(Server server) throws SQLException, IOException, ClassNotFoundException {
-        setColumnValue("name", server.getName());
-        setColumnValue("dnsId", server.getDnsId());
-        addWhere("vmid", server.getVmid());
+    public boolean update(Server server) {
+        DbQuery query = newQuery();
+        query.setColumnValue("name", server.getName());
+        query.setColumnValue("dnsId", server.getDnsId());
+        query.addWhere("vmid", server.getVmid());
 
-        return update();
+        return query.update();
+    }
+
+    /**
+     * @return DbQuery object for querying database
+     */
+    private DbQuery newQuery() {
+        DbQuery dao = new DbQuery();
+        dao.setTableName("AssignedServer");
+        return dao;
     }
 
     /**

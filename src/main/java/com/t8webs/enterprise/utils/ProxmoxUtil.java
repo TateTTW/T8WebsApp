@@ -125,7 +125,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    @Retryable(maxAttempts=30, value=InvalidVmStateException.class, backoff=@Backoff(delay = 4000))
     public boolean startVM(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return false;

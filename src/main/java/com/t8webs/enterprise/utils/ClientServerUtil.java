@@ -2,6 +2,7 @@ package com.t8webs.enterprise.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.t8webs.enterprise.T8WebsApplication;
+import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import com.t8webs.enterprise.dao.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
@@ -12,8 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Properties;
 
 @Component
@@ -49,8 +48,8 @@ public class ClientServerUtil implements IClientServerUtil {
     private static String remoteBuildFile = properties.getProperty("remoteBuildFile");
 
     @Override
-    @Retryable(maxAttempts=18, value=SQLIntegrityConstraintViolationException.class, backoff=@Backoff(delay = 500))
-    public Server assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException {
+    @Retryable(maxAttempts=20, value= DbQuery.IntegrityConstraintViolationException.class, backoff=@Backoff(delay = 100))
+    public Server assignUserServer(String username, String serverName) throws DbQuery.IntegrityConstraintViolationException {
         Server server = availableServerDAO.fetchAvailable();
 
         if(!server.isFound()){
@@ -60,7 +59,7 @@ public class ClientServerUtil implements IClientServerUtil {
         server.setUsername(username);
         server.setName(serverName);
 
-        // throws SQLIntegrityConstraintViolationException when another user is assigned server first
+        // throws DbQuery.IntegrityConstraintViolationException when another user is assigned server first
         if(!assignedServerDAO.save(server)){
             return new Server();
         }
