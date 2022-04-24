@@ -4,15 +4,13 @@ import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 @Repository
 @Profile("test")
-public class AvailableServerDAOStub implements IAvailableServerDAO{
+public class AvailableServerDAOStub implements IAvailableServerDAO {
 
     private static HashMap<Integer, Server> servers = new HashMap<>();
     static {
@@ -31,7 +29,7 @@ public class AvailableServerDAOStub implements IAvailableServerDAO{
      * @return boolean indicating a successful save
      */
     @Override
-    public boolean save(Server server) throws SQLException, IOException, ClassNotFoundException {
+    public boolean save(Server server) {
         if(servers.containsKey(server.getVmid())){
             return false;
         }
@@ -51,7 +49,7 @@ public class AvailableServerDAOStub implements IAvailableServerDAO{
      * @return available Servers
      */
     @Override
-    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
+    public Server fetchAvailable() {
         List<Server> availableServers = new ArrayList<>(servers.values());
 
         if(availableServers.isEmpty()){
@@ -68,7 +66,7 @@ public class AvailableServerDAOStub implements IAvailableServerDAO{
      * @return boolean indicating a successful delete
      */
     @Override
-    public boolean delete(int vmid) throws SQLException, IOException, ClassNotFoundException {
+    public boolean delete(int vmid) {
         Server server = servers.get(vmid);
 
         if(server == null || !server.isFound()){

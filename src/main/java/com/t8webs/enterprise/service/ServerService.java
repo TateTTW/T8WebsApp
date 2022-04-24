@@ -3,6 +3,7 @@ package com.t8webs.enterprise.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import com.t8webs.enterprise.dao.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,13 +41,13 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ObjectNode assignUserServer(String username, String serverName) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public ObjectNode assignUserServer(String username, String serverName) throws ProxmoxUtil.InvalidVmStateException, IOException, DbQuery.IntegrityConstraintViolationException {
         ObjectNode node = mapper.createObjectNode();
         node.put("error", "");
         node.put("success", false);
 
         // Confirm that the server name can be used
-        if(!serverNameConforms(serverName) || assignedServerDAO.fetchByUsername(username).size() > 1 || assignedServerDAO.existsBy(serverName.trim())){
+        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
             node.put("error", "The server name, " + serverName + ", is not available.");
             return node;
         }
@@ -143,7 +143,7 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public boolean renameServer(String username, int vmid, String serverName) throws SQLException, IOException, ClassNotFoundException {
+    public boolean renameServer(String username, int vmid, String serverName) {
         // Confirm that the server name can be used
         if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
             return false;
@@ -175,7 +175,7 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ArrayNode getUserServers(String username) throws SQLException, IOException, ClassNotFoundException {
+    public ArrayNode getUserServers(String username) {
         List<Server> servers = assignedServerDAO.fetchByUsername(username);
         ArrayNode serverNodes = mapper.createArrayNode();
         for(Server server: servers){
@@ -195,7 +195,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws SQLException, IOException, ClassNotFoundException {
+    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws IOException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()){
@@ -210,7 +210,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean startVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public boolean startVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         return server.isFound()
@@ -219,7 +219,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean shutdownVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public boolean shutdownVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         return server.isFound()
@@ -228,7 +228,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean rebootVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public boolean rebootVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         return server.isFound()
@@ -237,7 +237,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deleteVM(String username, int vmid) throws SQLException, IOException, ClassNotFoundException, ProxmoxUtil.InvalidVmStateException {
+    public boolean deleteVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()
@@ -254,7 +254,7 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public String getVmStatus(String username, int vmid) throws SQLException, IOException, ClassNotFoundException {
+    public String getVmStatus(String username, int vmid) {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if(server.isFound()){

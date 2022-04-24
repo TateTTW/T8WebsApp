@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 @RestController
 public class T8WebsController {
@@ -67,7 +66,7 @@ public class T8WebsController {
             if(serverService.deleteVM(user.getAttribute("email"), vmid)){
                 return new ResponseEntity(headers, HttpStatus.OK);
             }
-        } catch (Exception e) {
+        } catch (ProxmoxUtil.InvalidVmStateException e) {
             e.printStackTrace();
         }
 
@@ -79,12 +78,8 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            if(serverService.renameServer(user.getAttribute("email"), vmid, serverName)){
-                return new ResponseEntity(headers, HttpStatus.OK);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if(serverService.renameServer(user.getAttribute("email"), vmid, serverName)){
+            return new ResponseEntity(headers, HttpStatus.OK);
         }
 
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -99,7 +94,7 @@ public class T8WebsController {
             if(serverService.deployBuild(user.getAttribute("email"), vmid, buildFile)){
                 return new ResponseEntity(headers, HttpStatus.OK);
             }
-        } catch (SQLException | IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -148,7 +143,7 @@ public class T8WebsController {
 
                 return new ResponseEntity(responseNode, headers, HttpStatus.OK);
             }
-        } catch (SQLException | IOException | ClassNotFoundException | ProxmoxUtil.InvalidVmStateException e) {
+        } catch (ProxmoxUtil.InvalidVmStateException e) {
             e.printStackTrace();
         }
 
@@ -167,7 +162,7 @@ public class T8WebsController {
 
                 return new ResponseEntity(responseNode, headers, HttpStatus.OK);
             }
-        } catch (SQLException | IOException | ClassNotFoundException | ProxmoxUtil.InvalidVmStateException e) {
+        } catch (ProxmoxUtil.InvalidVmStateException e) {
             e.printStackTrace();
         }
 
@@ -186,7 +181,7 @@ public class T8WebsController {
 
                 return new ResponseEntity(responseNode, headers, HttpStatus.OK);
             }
-        } catch (SQLException | IOException | ClassNotFoundException | ProxmoxUtil.InvalidVmStateException e) {
+        } catch (ProxmoxUtil.InvalidVmStateException e) {
             e.printStackTrace();
         }
 
@@ -198,14 +193,8 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            ObjectNode responseNode = mapper.createObjectNode();
-            responseNode.put("status", serverService.getVmStatus(user.getAttribute("email"), vmid));
-            return new ResponseEntity(responseNode, headers, HttpStatus.OK);
-        } catch (SQLException | IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        ObjectNode responseNode = mapper.createObjectNode();
+        responseNode.put("status", serverService.getVmStatus(user.getAttribute("email"), vmid));
+        return new ResponseEntity(responseNode, headers, HttpStatus.OK);
     }
 }

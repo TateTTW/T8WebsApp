@@ -10,29 +10,15 @@ import java.util.Properties;
 
 
 /**
- * Parent DAO class containing all functionality for database communication
+ * Class containing all functionality for database communication
  */
-public class BaseDAO {
+public class DbQuery {
 
     private String tableName;
 
     private StringBuffer whereCondition;
 
     private HashMap<String, Object> columnValues;
-
-    /**
-     * Method for getting a connection to the database
-     *
-     * @return Connection to database
-     */
-    private static Connection getConnection() throws ClassNotFoundException, SQLException, IOException {
-            Class.forName("org.mariadb.jdbc.Driver");
-
-            Properties properties = new Properties();
-            properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
-
-            return DriverManager.getConnection(properties.getProperty("databaseURL"), properties.getProperty("databaseUser"), properties.getProperty("databasePass"));
-    }
 
     /**
      * Method for Subclasses to set the table name for their corresponding table
@@ -97,7 +83,7 @@ public class BaseDAO {
      *
      * @return ArrayList containing key value pairs
      */
-    public ArrayList<HashMap<String, Object>> select() throws SQLException, IOException, ClassNotFoundException {
+    public ArrayList<HashMap<String, Object>> select() {
         StringBuffer sql = new StringBuffer();
 
         sql.append("SELECT * FROM ").append(tableName);
@@ -106,18 +92,8 @@ public class BaseDAO {
             whereCondition = null;
         }
 
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-        statement.execute(sql.toString());
-
-        ArrayList<HashMap<String, Object>> results = getResultList(statement.getResultSet());
-
-        statement.close();
-        conn.close();
-
-        return results;
+        return execute(sql.toString());
     }
-
 
     /**
      * This method is for creating column value pairs for a SQL statement
@@ -137,7 +113,7 @@ public class BaseDAO {
      *
      * @return boolean indicating whether update was successful
      */
-    public boolean update() throws SQLException, IOException, ClassNotFoundException {
+    public boolean update() {
         StringBuffer sql = new StringBuffer();
 
         sql.append("UPDATE ").append(tableName).append(" SET ");
@@ -168,15 +144,7 @@ public class BaseDAO {
             whereCondition = null;
         }
 
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-
-        int numOfUpdates = statement.executeUpdate(sql.toString());
-
-        statement.close();
-        conn.close();
-
-        return numOfUpdates > 0;
+        return executeUpdate(sql.toString());
     }
 
     /**
@@ -184,7 +152,25 @@ public class BaseDAO {
      *
      * @return boolean indicating whether insert was successful
      */
-    public boolean insert() throws SQLException, IOException, ClassNotFoundException {
+    public boolean insert() {
+         return executeUpdate(constructInsertSQL());
+    }
+
+    /**
+     * This method is used for running insert statements against the database
+     *
+     * @return boolean indicating whether insert was successful
+     */
+    public boolean insertAndThrow() throws IntegrityConstraintViolationException {
+        return executeUpdateAndThrow(constructInsertSQL());
+    }
+
+    /**
+     * This method is used for running insert statements against the database with option to throw SQLIntegrityConstraintViolationException
+     *
+     * @return boolean indicating whether insert was successful
+     */
+    private String constructInsertSQL() {
         StringBuffer sql = new StringBuffer();
         sql.append("INSERT INTO ").append(tableName).append("(");
 
@@ -217,15 +203,7 @@ public class BaseDAO {
 
         columnValues = null;
 
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-
-        int numOfInserts = statement.executeUpdate(sql.toString());
-
-        statement.close();
-        conn.close();
-
-        return numOfInserts > 0;
+        return sql.toString();
     }
 
     /**
@@ -233,7 +211,7 @@ public class BaseDAO {
      *
      * @return boolean indicating whether delete was successful
      */
-    public boolean delete() throws SQLException, IOException, ClassNotFoundException {
+    public boolean delete() {
         StringBuffer sql = new StringBuffer();
         sql.append("DELETE FROM ").append(tableName);
 
@@ -244,17 +222,73 @@ public class BaseDAO {
             return false;
         }
 
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-
-        int numOfDeletes = statement.executeUpdate(sql.toString());
-
-        statement.close();
-        conn.close();
-
-        return numOfDeletes > 0;
+        return executeUpdate(sql.toString());
     }
 
+    /**
+     * @param query String to execute a select statement
+     * @return ArrayList of SQL results represented as key value pairs
+     */
+    private ArrayList<HashMap<String, Object>> execute(String query) {
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement())
+        {
+            statement.execute(query);
+            return getResultList(statement.getResultSet());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList();
+        }
+    }
+
+    /**
+     * @param query String to execute an UPDATE, DELETE, or INSERT statement
+     * @return boolean indicating a successful query
+     */
+    private boolean executeUpdate(String query) {
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement())
+        {
+            return statement.executeUpdate(query) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * @param query String to execute an UPDATE, DELETE, or INSERT statement
+     * @return boolean indicating a successful query
+     * @throws IntegrityConstraintViolationException indicating a race condition
+     */
+    private boolean executeUpdateAndThrow(String query) throws IntegrityConstraintViolationException {
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement())
+        {
+            try {
+                return statement.executeUpdate(query) > 0;
+            } catch (SQLIntegrityConstraintViolationException e) {
+                throw new IntegrityConstraintViolationException();
+            }
+        } catch (SQLException | ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Method for getting a connection to the database
+     *
+     * @return Connection to database
+     */
+    private Connection getConnection() throws ClassNotFoundException, SQLException, IOException {
+        Class.forName("org.mariadb.jdbc.Driver");
+
+        Properties properties = new Properties();
+        properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+
+        return DriverManager.getConnection(properties.getProperty("databaseURL"), properties.getProperty("databaseUser"), properties.getProperty("databasePass"));
+    }
 
     /**
      * Method for parsing SQL Result sets into an ArrayList
@@ -266,24 +300,30 @@ public class BaseDAO {
         ArrayList<HashMap<String, Object>> results = new ArrayList<HashMap<String, Object>>();
         HashMap<String, Object> valuesMap;
 
-            ResultSetMetaData metaData = resultSet.getMetaData();
+        ResultSetMetaData metaData = resultSet.getMetaData();
 
-            while (resultSet.next()) {
-                valuesMap = new HashMap<>();
-                for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    int columnType = metaData.getColumnType(i);
-                    Object value;
-                    if(columnType == 93) {
-                        value = resultSet.getTimestamp(i);
-                    } else {
-                        value = resultSet.getObject(i);
-                    }
-
-                    valuesMap.put(metaData.getColumnName(i), value);
+        while (resultSet.next()) {
+            valuesMap = new HashMap<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                int columnType = metaData.getColumnType(i);
+                Object value;
+                if(columnType == 93) {
+                    value = resultSet.getTimestamp(i);
+                } else {
+                    value = resultSet.getObject(i);
                 }
-                results.add(valuesMap);
-            }
 
-            return results;
+                valuesMap.put(metaData.getColumnName(i), value);
+            }
+            results.add(valuesMap);
+        }
+
+        return results;
+    }
+
+    public class IntegrityConstraintViolationException extends Exception {
+        public IntegrityConstraintViolationException() {
+            super("Duplicate Primary Key.");
+        }
     }
 }

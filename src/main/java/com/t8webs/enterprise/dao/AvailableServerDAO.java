@@ -4,19 +4,13 @@ import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 @Repository
 @Profile("dev")
-public class AvailableServerDAO extends BaseDAO implements IAvailableServerDAO {
-
-    public AvailableServerDAO() {
-        super.setTableName("AvailableServer");
-    }
+public class AvailableServerDAO implements IAvailableServerDAO {
 
     /**
      * Method for inserting a Server when it has been unassigned
@@ -25,11 +19,12 @@ public class AvailableServerDAO extends BaseDAO implements IAvailableServerDAO {
      * @return boolean indicating a successful save
      */
     @Override
-    public boolean save(Server server) throws SQLException, IOException, ClassNotFoundException {
-        setColumnValue("vmid", server.getVmid());
-        setColumnValue("ipAddress", server.getIpAddress());
+    public boolean save(Server server) {
+        DbQuery query = newQuery();
+        query.setColumnValue("vmid", server.getVmid());
+        query.setColumnValue("ipAddress", server.getIpAddress());
 
-        return insert();
+        return query.insert();
     }
 
     /**
@@ -38,8 +33,8 @@ public class AvailableServerDAO extends BaseDAO implements IAvailableServerDAO {
      * @return available Servers
      */
     @Override
-    public Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException {
-        List<Server> servers = parse(select());
+    public Server fetchAvailable() {
+        List<Server> servers = parse(newQuery().select());
 
         if(servers.isEmpty()){
             return new Server();
@@ -55,9 +50,19 @@ public class AvailableServerDAO extends BaseDAO implements IAvailableServerDAO {
      * @return boolean indicating a successful delete
      */
     @Override
-    public boolean delete(int vmid) throws SQLException, IOException, ClassNotFoundException {
-        addWhere("vmid", vmid);
-        return delete();
+    public boolean delete(int vmid) {
+        DbQuery query = newQuery();
+        query.addWhere("vmid", vmid);
+        return query.delete();
+    }
+
+    /**
+     * @return DbQuery object for querying database
+     */
+    private DbQuery newQuery() {
+        DbQuery dao = new DbQuery();
+        dao.setTableName("AvailableServer");
+        return dao;
     }
 
     /**

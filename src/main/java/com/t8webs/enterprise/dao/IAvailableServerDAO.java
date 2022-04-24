@@ -2,9 +2,6 @@ package com.t8webs.enterprise.dao;
 
 import com.t8webs.enterprise.dto.Server;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 /**
  * Data Access Object for Servers
  * <p>
@@ -18,14 +15,14 @@ public interface IAvailableServerDAO {
      * @param server Server object to be saved as a record in the database
      * @return boolean indicating a successful save
      */
-    boolean save(Server server) throws SQLException, IOException, ClassNotFoundException;
+    boolean save(Server server);
 
     /**
      * Method for fetching an available server
      *
      * @return an available Server
      */
-    Server fetchAvailable() throws SQLException, IOException, ClassNotFoundException;
+    Server fetchAvailable();
 
     /**
      * Method for deleting an available Server when it has been assigned
@@ -33,6 +30,6 @@ public interface IAvailableServerDAO {
      * @param vmid int uniquely identifying a Server
      * @return boolean indicating a successful delete
      */
-    boolean delete(int vmid) throws SQLException, IOException, ClassNotFoundException;
+    boolean delete(int vmid);
 
 }
