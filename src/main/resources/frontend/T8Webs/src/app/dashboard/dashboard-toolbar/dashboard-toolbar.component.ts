@@ -69,7 +69,7 @@ export class DashboardToolbarComponent implements OnInit, AfterViewInit, OnChang
 
       let index = 0;
       this.toolbar?.items.forEach((item: ItemModel) => {
-        if(nodeType == NodeType.None){
+        if(nodeType == NodeType.None && item.cssClass !== 'persist'){
           this.toolbar?.hideItem(index, true);
         }
         else if(item.cssClass === 'group')
