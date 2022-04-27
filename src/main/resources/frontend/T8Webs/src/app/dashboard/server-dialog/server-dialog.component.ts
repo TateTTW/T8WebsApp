@@ -36,7 +36,9 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
     ])
   })
 
-  private _serverName: AbstractControl | null = null;
+  get displayServerName(): string {
+    return this.serverName && this.serverName.valid ? String(this.serverName.value) : "ServerName";
+  }
   get serverName(): AbstractControl | null {
     return this.formGroup.get("serverName");
   }
