@@ -116,6 +116,13 @@ export class DashboardService {
     return this.getData(url, options);
   }
 
+  getServerData(vmid: number): Observable<any> {
+    const url = '/serverData';
+    const params = {vmid: vmid};
+    const options = { params: this.createHttpParams(params)};
+    return this.getData(url, options);
+  }
+
   deployBuild(vmid: number, file: File): Observable<any> {
     const url = '/deployBuild';
 

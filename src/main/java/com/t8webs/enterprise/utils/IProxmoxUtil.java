@@ -1,9 +1,13 @@
 package com.t8webs.enterprise.utils;
 
+import kong.unirest.json.JSONObject;
+
 public interface IProxmoxUtil {
     boolean cloneVM(int vmid, String vmName);
 
     String getVmStatus(int vmid);
+
+    JSONObject getVmData(int vmid, ProxmoxUtil.TimeFrame timeFrame);
 
     boolean isVmRunning(int vmid);
 

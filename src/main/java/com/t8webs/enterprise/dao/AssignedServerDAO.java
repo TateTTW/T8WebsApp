@@ -27,7 +27,7 @@ public class AssignedServerDAO implements IAssignedServerDAO {
         query.setColumnValue("ipAddress", server.getIpAddress());
         query.setColumnValue("dnsId", server.getDnsId());
 
-        return query.insertAndThrow();
+        return query.insert();
     }
 
     /**

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
+import kong.unirest.json.JSONObject;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -40,5 +41,7 @@ public interface IServerService {
     boolean deleteVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException;
 
     String getVmStatus(String username, int vmid);
+
+    JSONObject getVmData(String username, int vmid, ProxmoxUtil.TimeFrame timeFrame);
 }
 

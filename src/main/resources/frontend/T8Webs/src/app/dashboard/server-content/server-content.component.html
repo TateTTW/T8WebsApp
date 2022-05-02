@@ -1,17 +1,33 @@
 <div class="dashboardContent">
-  <div fxFlex="50" fxLayout="50" fxLayoutAlign="center center">
-    <div class="buildDiv">
-      <ejs-uploader #uploader [multiple]="false" [cssClass]="'uploader'" allowedExtensions='.war' maxFileSize="524288000"></ejs-uploader>
-      <table>
-        <tr>
-          <td>
-            <button ejs-button [disabled]="disableDeploy" (click)="submit()" isPrimary="true">Deploy</button>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-  <div fxFlex="50" fxLayout="50">
-
+  <div class="dashboardContainer">
+    <ejs-dashboardlayout #serverDashboard
+                         [columns]="4"
+                         [cellAspectRatio]="100/50"
+                         [cellSpacing]="[15,15]"
+                         [draggableHandle]="draggableHandle"
+                         [allowFloating]="true"
+                         [allowDragging]="true"
+                         [mediaQuery]='mediaQuery'>
+      <div id="info" class="e-panel" data-row="0" data-col="0" data-sizeX="1" data-sizeY="2">
+        <div class="e-panel-header">Summary</div>
+        <server-info [selectedTreeNode]="selectedTreeNode"></server-info>
+      </div>
+      <div id="uploader" class="e-panel" data-row="0" data-col="1" data-sizeX="1" data-sizeY="2">
+        <div class="e-panel-header">Uploader</div>
+        <file-uploader [selectedTreeNode]="selectedTreeNode" (hideSpinner)="hideSpinner.emit()" (showSpinner)="showSpinner.emit()"></file-uploader>
+      </div>
+      <div id="netGraph" class="e-panel" data-row="0" data-col="2" data-sizeX="2" data-sizeY="2">
+        <div class="e-panel-header graphLabel">Network Traffic</div>
+        <net-graph *ngIf="loaded" [netInData]="netInData" [netOutData]="netOutData"></net-graph>
+      </div>
+      <div id="cpuGraph" class="e-panel" data-row="2" data-col="0" data-sizeX="2" data-sizeY="2">
+        <div class="e-panel-header graphLabel">CPU Usage</div>
+        <cpu-graph *ngIf="loaded" [cpuData]="cpuData"></cpu-graph>
+      </div>
+      <div id="ramGraph" class="e-panel" data-row="2" data-col="0" data-sizeX="2" data-sizeY="2">
+        <div class="e-panel-header graphLabel">Memory Usage</div>
+        <ram-graph *ngIf="loaded" [ramData]="ramData"></ram-graph>
+      </div>
+    </ejs-dashboardlayout>
   </div>
 </div>

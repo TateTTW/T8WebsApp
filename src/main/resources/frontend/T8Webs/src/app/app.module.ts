@@ -14,6 +14,9 @@ import { TreeViewAllModule, ToolbarModule, MenuModule, ContextMenuModule  } from
 import { DropDownButtonModule } from "@syncfusion/ej2-angular-splitbuttons";
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { UploaderModule } from '@syncfusion/ej2-angular-inputs';
+import { ChartModule } from '@syncfusion/ej2-angular-charts';
+import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
+import { DateTimeService, DateTimeCategoryService, AreaSeriesService, LegendService, TooltipService} from '@syncfusion/ej2-angular-charts';
 
 // Additional Components
 import { HomepageComponent } from "./homepage/homepage.component";
@@ -23,6 +26,11 @@ import { DashboardToolbarComponent } from './dashboard/dashboard-toolbar/dashboa
 import { DashboardTreeComponent } from './dashboard/dashboard-tree/dashboard-tree.component';
 import { ServerDialogComponent } from './dashboard/server-dialog/server-dialog.component';
 import { ServerContentComponent } from './dashboard/server-content/server-content.component';
+import { FileUploaderComponent } from './dashboard/server-content/content/file-uploader/file-uploader.component';
+import { ServerInfoComponent } from './dashboard/server-content/content/server-info/server-info.component';
+import { CpuGraphComponent } from './dashboard/server-content/content/cpu-graph/cpu-graph.component';
+import { RamGraphComponent } from './dashboard/server-content/content/ram-graph/ram-graph.component';
+import { NetGraphComponent } from './dashboard/server-content/content/net-graph/net-graph.component';
 
 @NgModule({
   declarations: [
@@ -33,7 +41,12 @@ import { ServerContentComponent } from './dashboard/server-content/server-conten
     DashboardToolbarComponent,
     DashboardTreeComponent,
     ServerDialogComponent,
-    ServerContentComponent
+    ServerContentComponent,
+    FileUploaderComponent,
+    ServerInfoComponent,
+    CpuGraphComponent,
+    RamGraphComponent,
+    NetGraphComponent
   ],
   imports: [
     FlexLayoutModule,
@@ -44,6 +57,8 @@ import { ServerContentComponent } from './dashboard/server-content/server-conten
     ButtonModule,
     DropDownButtonModule,
     CheckBoxModule,
+    ChartModule,
+    DashboardLayoutModule,
     TreeViewAllModule,
     ToolbarModule,
     MenuModule,
@@ -53,7 +68,7 @@ import { ServerContentComponent } from './dashboard/server-content/server-conten
     ReactiveFormsModule,
     UploaderModule
   ],
-  providers: [],
+  providers: [DateTimeService, DateTimeCategoryService, AreaSeriesService, LegendService, TooltipService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

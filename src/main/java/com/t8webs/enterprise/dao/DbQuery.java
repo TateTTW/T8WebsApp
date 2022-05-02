@@ -144,7 +144,12 @@ public class DbQuery {
             whereCondition = null;
         }
 
-        return executeUpdate(sql.toString());
+        try {
+            return executeUpdate(sql.toString());
+        } catch (IntegrityConstraintViolationException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -152,25 +157,7 @@ public class DbQuery {
      *
      * @return boolean indicating whether insert was successful
      */
-    public boolean insert() {
-         return executeUpdate(constructInsertSQL());
-    }
-
-    /**
-     * This method is used for running insert statements against the database
-     *
-     * @return boolean indicating whether insert was successful
-     */
-    public boolean insertAndThrow() throws IntegrityConstraintViolationException {
-        return executeUpdateAndThrow(constructInsertSQL());
-    }
-
-    /**
-     * This method is used for running insert statements against the database with option to throw SQLIntegrityConstraintViolationException
-     *
-     * @return boolean indicating whether insert was successful
-     */
-    private String constructInsertSQL() {
+    public boolean insert() throws IntegrityConstraintViolationException {
         StringBuffer sql = new StringBuffer();
         sql.append("INSERT INTO ").append(tableName).append("(");
 
@@ -203,7 +190,7 @@ public class DbQuery {
 
         columnValues = null;
 
-        return sql.toString();
+        return executeUpdate(sql.toString());
     }
 
     /**
@@ -222,7 +209,12 @@ public class DbQuery {
             return false;
         }
 
-        return executeUpdate(sql.toString());
+        try {
+            return executeUpdate(sql.toString());
+        } catch (IntegrityConstraintViolationException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -244,30 +236,16 @@ public class DbQuery {
     /**
      * @param query String to execute an UPDATE, DELETE, or INSERT statement
      * @return boolean indicating a successful query
-     */
-    private boolean executeUpdate(String query) {
-        try (Connection conn = getConnection();
-             Statement statement = conn.createStatement())
-        {
-            return statement.executeUpdate(query) > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * @param query String to execute an UPDATE, DELETE, or INSERT statement
-     * @return boolean indicating a successful query
      * @throws IntegrityConstraintViolationException indicating a race condition
      */
-    private boolean executeUpdateAndThrow(String query) throws IntegrityConstraintViolationException {
+    private boolean executeUpdate(String query) throws IntegrityConstraintViolationException {
         try (Connection conn = getConnection();
              Statement statement = conn.createStatement())
         {
             try {
                 return statement.executeUpdate(query) > 0;
             } catch (SQLIntegrityConstraintViolationException e) {
+                e.printStackTrace();
                 throw new IntegrityConstraintViolationException();
             }
         } catch (SQLException | ClassNotFoundException | IOException e) {
