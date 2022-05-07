@@ -51,7 +51,7 @@ export class ServerContentComponent implements OnInit, AfterViewChecked, OnChang
   ngOnChanges(changes: SimpleChanges): void {
     if(changes['selectedTreeNode']){
       this.intervalSub?.unsubscribe();
-      this.intervalSub = interval(30000).subscribe((val) => {
+      this.intervalSub = interval(30000).subscribe(() => {
         this.getServerData();
       });
       this.getServerData();
@@ -78,8 +78,8 @@ export class ServerContentComponent implements OnInit, AfterViewChecked, OnChang
         const date = new Date(0);
         date.setUTCSeconds(dataObj.time - 240);
 
-        const netIn = ((dataObj.netin ?? 0)/1024).toFixed(2);
-        const netOut = ((dataObj.netout ?? 0)/1024).toFixed(2);
+        const netIn = (dataObj.netin ?? 0).toFixed(2);
+        const netOut = (dataObj.netout ?? 0).toFixed(2);
         const cpu = ((dataObj.cpu ?? 0) * 100).toFixed(2);
         const mem = (Number(dataObj.mem ?? 0) / 1048576).toFixed(2);
 
