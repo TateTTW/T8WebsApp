@@ -1,0 +1,7 @@
+<div class="e-panel-content">
+  <ejs-uploader #uploader [multiple]="false" [dropArea]='dropArea' [cssClass]="'uploader'" allowedExtensions='.war' maxFileSize="524288000"></ejs-uploader>
+  <div id="dropArea" #dropArea>Drop files here to upload</div>
+  <div>
+    <button id="deployBtn" ejs-button [disabled]="disableDeploy" (click)="submit()" isPrimary="true">Deploy</button>
+  </div>
+</div>

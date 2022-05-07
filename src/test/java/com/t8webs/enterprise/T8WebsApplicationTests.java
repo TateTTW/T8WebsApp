@@ -29,7 +29,7 @@ class T8WebsApplicationTests {
     }
 
     @Test
-    void configProxy() throws ClassNotFoundException, SQLException, IOException {
-//        reverseProxyUtil.buildLocalCfgFile();
+    void testVMdata() throws ClassNotFoundException, SQLException, IOException {
+        proxmoxUtil.getVmData(120, ProxmoxUtil.TimeFrame.HOUR);
     }
 }

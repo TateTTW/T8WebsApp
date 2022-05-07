@@ -16,6 +16,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   @ViewChild ('dialog') dialog!: DialogComponent
   // Subscriptions
   private addServerSub: Subscription | undefined;
+  private renameServerSub: Subscription | undefined;
 
   public job: Job = {
     type: JobType.None,
@@ -36,7 +37,9 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
     ])
   })
 
-  private _serverName: AbstractControl | null = null;
+  get displayServerName(): string {
+    return this.serverName && this.serverName.valid ? String(this.serverName.value) : "{ServerName}";
+  }
   get serverName(): AbstractControl | null {
     return this.formGroup.get("serverName");
   }
@@ -51,6 +54,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.addServerSub?.unsubscribe();
+    this.renameServerSub?.unsubscribe();
   }
 
   confirm() {
@@ -94,7 +98,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   private renameServer() {
     if(this.serverName && this.serverName.valid) {
       const serverName = this.serverName.value;
-      this.addServerSub = this.dashboardService.renameServer(this.job.vmid, serverName).subscribe(
+      this.renameServerSub = this.dashboardService.renameServer(this.job.vmid, serverName).subscribe(
         data => this.submitSuccess(serverName, data, this.job),
         error => this.submitFailure(error)
       )

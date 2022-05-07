@@ -8,6 +8,7 @@ import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import com.t8webs.enterprise.dao.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.utils.*;
+import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ public class ServerService implements IServerService {
     ISShUtils sshUtils;
 
     private final ObjectMapper mapper = new ObjectMapper();
+
     /**
      * @param username    String user to assign a server to
      * @param serverName  String name to give server
@@ -266,5 +268,16 @@ public class ServerService implements IServerService {
         }
 
         return "";
+    }
+
+    @Override
+    public JSONObject getVmData(String username, int vmid, ProxmoxUtil.TimeFrame timeFrame) {
+        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+
+        if(server.isFound()){
+            return proxmoxUtil.getVmData(vmid, timeFrame);
+        }
+
+        return new JSONObject();
     }
 }

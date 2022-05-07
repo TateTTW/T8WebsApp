@@ -28,15 +28,16 @@ public class ProxmoxUtil implements IProxmoxUtil {
         Unirest.config().verifySsl(false);
     }
 
-    private static String domain = properties.getProperty("proxmoxIP");
-    private static String proxmoxToken = properties.getProperty("promoxToken");
-    private static String cloneVmUrl = properties.getProperty("cloneVmUrl");
-    private static String deleteVmUrl = properties.getProperty("deleteVmUrl");
-    private static String startVmUrl = properties.getProperty("startVmUrl");
-    private static String shutdownVmUrl = properties.getProperty("shutdownVmUrl");
-    private static String rebootVmUrl = properties.getProperty("rebootVmUrl");
-    private static String getVmIpUrl = properties.getProperty("getVmIpUrl");
-    private static String statusVmUrl = properties.getProperty("statusVmUrl");
+    private static final String DOMAIN = properties.getProperty("proxmoxIP");
+    private static final String TOKEN = properties.getProperty("promoxToken");
+    private static final String CLONE_VM_URL = properties.getProperty("cloneVmUrl");
+    private static final String DELETE_VM_URL = properties.getProperty("deleteVmUrl");
+    private static final String START_VM_URL = properties.getProperty("startVmUrl");
+    private static final String SHUTDOWN_VM_URL = properties.getProperty("shutdownVmUrl");
+    private static final String REBOOT_VM_URL = properties.getProperty("rebootVmUrl");
+    private static final String GET_VM_IP_URL = properties.getProperty("getVmIpUrl");
+    private static final String GET_VM_DATA_URL = properties.getProperty("getVmDataUrl");
+    private static final String STATUS_VM_URL = properties.getProperty("statusVmUrl");
 
     private static int minVmid = 120;
 
@@ -45,16 +46,20 @@ public class ProxmoxUtil implements IProxmoxUtil {
         STOPPED
     }
 
+    public enum TimeFrame {
+        HOUR
+    }
+
     @Override
     public boolean cloneVM(int vmid, String vmName) {
         if (vmid < ProxmoxUtil.minVmid) {
             return false;
         }
 
-        String url = MessageFormat.format(ProxmoxUtil.cloneVmUrl, ProxmoxUtil.domain);
+        String url = MessageFormat.format(ProxmoxUtil.CLONE_VM_URL, ProxmoxUtil.DOMAIN);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", ProxmoxUtil.proxmoxToken)
+                .header("Authorization", ProxmoxUtil.TOKEN)
                 .queryString("newid", vmid)
                 .queryString("name", vmName)
                 .queryString("storage", "local-lvm")
@@ -62,7 +67,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .queryString("full", "1")
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -71,17 +76,36 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return "";
         }
 
-        String url = MessageFormat.format(statusVmUrl, domain, vmid);
+        String url = MessageFormat.format(STATUS_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.getStatus() == 200){
+        if(response.isSuccess()){
             return response.getBody().getObject().getJSONObject("data").getString("status");
         }
 
         return "";
+    }
+
+    @Override
+    public JSONObject getVmData(int vmid, TimeFrame timeFrame) {
+        if(vmid < minVmid){
+            return new JSONObject();
+        }
+
+        String url = MessageFormat.format(GET_VM_DATA_URL, DOMAIN, vmid, timeFrame.name().toLowerCase());
+
+        HttpResponse<JsonNode> response = Unirest.get(url)
+                .header("Authorization", TOKEN)
+                .asJson();
+
+        if(response.isSuccess()){
+            return response.getBody().getObject();
+        }
+
+        return new JSONObject();
     }
 
     @Override
@@ -95,13 +119,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return true;
         }
 
-        String url = MessageFormat.format(statusVmUrl, domain, vmid);
+        String url = MessageFormat.format(STATUS_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.getStatus() == 200){
+        if(response.isSuccess()){
             return response.getBody().getObject().getJSONObject("data").has("lock");
         }
 
@@ -135,13 +159,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(startVmUrl, domain, vmid);
+        String url = MessageFormat.format(START_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -155,13 +179,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(shutdownVmUrl, domain, vmid);
+        String url = MessageFormat.format(SHUTDOWN_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -175,13 +199,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(rebootVmUrl, domain, vmid);
+        String url = MessageFormat.format(REBOOT_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -194,13 +218,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return false;
         }
 
-        String url = MessageFormat.format(deleteVmUrl, domain, vmid);
+        String url = MessageFormat.format(DELETE_VM_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -214,13 +238,13 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String getVMipURL = MessageFormat.format(getVmIpUrl, domain, vmid);
+        String getVMipURL = MessageFormat.format(GET_VM_IP_URL, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(getVMipURL)
-                .header("Authorization", proxmoxToken)
+                .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.getStatus() != 200){
+        if(!response.isSuccess()){
             throw new InvalidVmStateException(vmid);
         }
 

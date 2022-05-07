@@ -1,10 +1,10 @@
 <div id="spinnerDiv" class="container">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
   <div fxLayout="row">
-    <div fxFlex="15">
+    <div fxFlex="15" fxFlex.lt-sm="30">
       <dashboard-tree #dashboardTree (nodeSelection)="nodeSelection($event)" (doJob)="doJob($event)"></dashboard-tree>
     </div>
-    <div fxFlex="85">
+    <div fxFlex="85" fxFlex.lt-sm="70">
       <dashboard-toolbar [user]="user" [selectedTreeNode]="selectedTreeNode" (doJob)="doJob($event)"></dashboard-toolbar>
       <div *ngIf="this.selectedTreeNode.type.id == 1">
         <server-content [selectedTreeNode]="selectedTreeNode" (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-content>

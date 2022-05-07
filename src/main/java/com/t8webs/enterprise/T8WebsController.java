@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.service.IServerService;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
+import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -196,5 +197,16 @@ public class T8WebsController {
         ObjectNode responseNode = mapper.createObjectNode();
         responseNode.put("status", serverService.getVmStatus(user.getAttribute("email"), vmid));
         return new ResponseEntity(responseNode, headers, HttpStatus.OK);
+    }
+
+    @GetMapping(value="/serverData", produces="application/json")
+    public ResponseEntity getServerData(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="vmid") int vmid) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        JSONObject jsonObject = serverService.getVmData(user.getAttribute("email"), vmid, ProxmoxUtil.TimeFrame.HOUR);
+        ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
+
+        return new ResponseEntity(objectNode, headers, HttpStatus.OK);
     }
 }

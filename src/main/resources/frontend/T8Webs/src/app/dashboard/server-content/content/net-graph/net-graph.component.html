@@ -1,0 +1,8 @@
+<div class="e-panel-content">
+  <ejs-chart [tooltip]='tooltip' [chartArea]='chartArea' align='center' [primaryXAxis]='primaryXAxis' [primaryYAxis]='primaryYAxis'>
+    <e-series-collection>
+      <e-series [dataSource]='netInData' type='Area' xName='x' yName='y' [marker]='marker' name='Net In' opacity=0.5 width=2 border-color='transparent'></e-series>
+      <e-series [dataSource]='netOutData' type='Area' xName='x' yName='y' [marker]='marker' name='Net Out' opacity=0.5 width=2 border-color='transparent'></e-series>
+    </e-series-collection>
+  </ejs-chart>
+</div>

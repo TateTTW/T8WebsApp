@@ -24,7 +24,12 @@ public class AvailableServerDAO implements IAvailableServerDAO {
         query.setColumnValue("vmid", server.getVmid());
         query.setColumnValue("ipAddress", server.getIpAddress());
 
-        return query.insert();
+        try {
+            return query.insert();
+        } catch (DbQuery.IntegrityConstraintViolationException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
