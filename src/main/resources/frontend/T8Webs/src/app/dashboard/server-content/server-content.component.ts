@@ -1,15 +1,17 @@
 import {
+  AfterViewChecked,
   Component,
   EventEmitter,
-  Input,
+  Input, OnChanges,
   OnDestroy,
   OnInit,
   Output,
+  SimpleChanges,
   ViewChild
 } from '@angular/core';
 import {DashboardService} from "../dashboard.service";
 import {Subscription} from "rxjs";
-import { interval } from 'rxjs';
+import {interval} from 'rxjs';
 import {NodeType, TreeNode} from "../dashboard-tree/TreeNode";
 import {DashboardLayoutComponent} from "@syncfusion/ej2-angular-layouts";
 
@@ -18,8 +20,8 @@ import {DashboardLayoutComponent} from "@syncfusion/ej2-angular-layouts";
   templateUrl: './server-content.component.html',
   styleUrls: ['./server-content.component.less']
 })
-export class ServerContentComponent implements OnInit,OnDestroy {
-  @ViewChild ('serverDashboard') serverDashboard!: DashboardLayoutComponent;
+export class ServerContentComponent implements OnInit, AfterViewChecked, OnChanges, OnDestroy {
+  @ViewChild('serverDashboard') serverDashboard!: DashboardLayoutComponent;
   // Subscriptions
   private intervalSub: Subscription | undefined;
 
@@ -40,14 +42,20 @@ export class ServerContentComponent implements OnInit,OnDestroy {
   constructor(private dashboardService: DashboardService) { }
 
   ngOnInit(): void {
-    this.intervalSub = interval(30000).subscribe((val) => {
-      this.getServerData();
-    });
-    this.getServerData();
   }
 
   ngAfterViewChecked(): void {
     this.loaded = true;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if(changes['selectedTreeNode']){
+      this.intervalSub?.unsubscribe();
+      this.intervalSub = interval(30000).subscribe((val) => {
+        this.getServerData();
+      });
+      this.getServerData();
+    }
   }
 
   ngOnDestroy(): void {
@@ -70,8 +78,8 @@ export class ServerContentComponent implements OnInit,OnDestroy {
         const date = new Date(0);
         date.setUTCSeconds(dataObj.time - 240);
 
-        const netIn = (dataObj.netin ?? 0).toFixed(2);
-        const netOut = (dataObj.netout ?? 0).toFixed(2);
+        const netIn = ((dataObj.netin ?? 0)/1024).toFixed(2);
+        const netOut = ((dataObj.netout ?? 0)/1024).toFixed(2);
         const cpu = ((dataObj.cpu ?? 0) * 100).toFixed(2);
         const mem = (Number(dataObj.mem ?? 0) / 1048576).toFixed(2);
 

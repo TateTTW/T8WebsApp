@@ -22,7 +22,8 @@ export class FileUploaderComponent implements OnInit, OnDestroy {
   @Output() hideSpinner: EventEmitter<any> = new EventEmitter<any>();
 
   get disableDeploy(): boolean {
-    return this.selectedTreeNode.id < 1 || this.selectedTreeNode.status == 'stopped' || (this.uploader != undefined && this.uploader.getFilesData().length < 1);
+    return !(this.selectedTreeNode.id > 1 && this.selectedTreeNode.status == 'running'
+      && this.uploader != undefined && this.uploader.getFilesData().length > 0 && this.uploader.getFilesData()[0].statusCode == '1');
   }
 
   constructor(private dashboardService: DashboardService) { }
