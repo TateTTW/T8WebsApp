@@ -2,8 +2,7 @@ package com.t8webs.enterprise.service;
 
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.t8webs.enterprise.dao.DbQuery;
+import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
 import kong.unirest.json.JSONObject;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,9 +15,9 @@ public interface IServerService {
     /**
      * @param username    String user to assign a server to
      * @param serverName  String name to give server
-     * @return
+     * @return CreationStatus status that was reached before an error occurred
      */
-    ObjectNode assignUserServer(String username, String serverName) throws ProxmoxUtil.InvalidVmStateException, IOException, DbQuery.IntegrityConstraintViolationException;
+    Server.CreationStatus addServer(String username, String serverName);
 
     /**
      * @param username    String user assigned to server

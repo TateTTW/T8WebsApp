@@ -3,12 +3,12 @@ package com.t8webs.enterprise.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
-import com.t8webs.enterprise.dao.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.utils.*;
 import kong.unirest.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,8 +23,6 @@ public class ServerService implements IServerService {
     @Autowired
     IDomainUtil domainUtil;
     @Autowired
-    IAvailableServerDAO availableServerDAO;
-    @Autowired
     IAssignedServerDAO assignedServerDAO;
     @Autowired
     IProxmoxUtil proxmoxUtil;
@@ -32,8 +30,8 @@ public class ServerService implements IServerService {
     IReverseProxyUtil reverseProxyUtil;
     @Autowired
     IClientServerUtil clientServerUtil;
-    @Autowired
-    ISShUtils sshUtils;
+
+    Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -43,69 +41,135 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public ObjectNode assignUserServer(String username, String serverName) throws ProxmoxUtil.InvalidVmStateException, IOException, DbQuery.IntegrityConstraintViolationException {
-        ObjectNode node = mapper.createObjectNode();
-        node.put("error", "");
-        node.put("success", false);
+    public Server.CreationStatus addServer(String username, String serverName) {
+        Server.CreationStatus status = Server.CreationStatus.BEGIN;
+        Server server = new Server();
 
-        // Confirm that the server name can be used
-        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
-            node.put("error", "The server name, " + serverName + ", is not available.");
-            return node;
+        try {
+            // Confirm that the server name can be used
+            if (!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName)) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.VERIFIED_NAME;
+
+            // Assign an available server to the user
+            server = clientServerUtil.assignUserServer(username, serverName);
+            if (!server.isFound()) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.ASSIGNED;
+
+            // Add a dns record for the server
+            String dnsId = domainUtil.addDnsRecord(server.getName());
+            if (dnsId.isEmpty()) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.HAS_DNS_RECORD;
+
+            // Save dnsId to database
+            server.setDnsId(dnsId);
+            if (!assignedServerDAO.update(server)) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.SAVED_DNS_ID;
+
+            // Create a vm from template
+            if (!proxmoxUtil.cloneVM(server.getVmid(), serverName)) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.HAS_VM;
+
+            // Start virtual machine
+            if (!proxmoxUtil.startVM(server.getVmid())) {
+                throw new ServerCreationException(server);
+            }
+
+            // Retrieve virtual machine's dhcp ip address
+            String dhcpIp = proxmoxUtil.getServerIp(server.getVmid());
+            if (dhcpIp.isEmpty()) {
+                throw new ServerCreationException(server);
+            }
+
+            // Set the vm's ip to a static ip defined in the server database entry
+            if (!clientServerUtil.updateServerIp(dhcpIp, server.getIpAddress())) {
+                throw new ServerCreationException(server);
+            }
+
+            // Update proxy config to route traffic to the server
+            if(!reverseProxyUtil.addHostEntry(server)) {
+                throw new ServerCreationException(server);
+            }
+            status = Server.CreationStatus.HAS_PROXY_CFG;
+
+            // Shutdown vm to apply ip on startup
+            if(!proxmoxUtil.shutdownVM(server.getVmid())) {
+                throw new ServerCreationException(server);
+            }
+
+            // Server creation has completed successfully
+            server.setCreationStatus(Server.CreationStatus.COMPLETED);
+            status = Server.CreationStatus.COMPLETED;
+
+            // Wait for server to complete shutdown
+            proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid());
+
+        } catch (Exception e) {
+            logger.error("Failed to add server: " + server.getName() + "(" + server.getVmid() + ")");
+            logger.error("Creation status: " + status.name());
+            e.printStackTrace();
+
+            server.setCreationStatus(status);
+            rollbackServerCreation(server);
         }
 
-        // Assign an available to server to the user
-        Server server = clientServerUtil.assignUserServer(username, serverName);
-
-        if(!server.isFound()){
-            node.put("error", "Could not allocate an available server.");
-            return node;
+        if (server.isFound()) {
+            assignedServerDAO.update(server);
         }
 
-        // Add a dns record for the server
-        String dnsId = domainUtil.addDnsRecord(server.getName());
-        if(dnsId.isEmpty()){
-            node.put("error", "Failed to create server dns record.");
-            return node;
+        return status;
+    }
+
+    private void rollbackServerCreation(Server server) {
+        logger.error("Rollback Server: " + server.getName() + "(" + server.getVmid() + ")");
+        Server.CreationStatus status = server.getCreationStatus();
+
+        try {
+            switch (status) {
+                case HAS_PROXY_CFG:
+                    if (reverseProxyUtil.deleteHostEntry(server)) {
+                        server.setCreationStatus(Server.CreationStatus.HAS_VM);
+                    } else {
+                        break;
+                    }
+                case HAS_VM:
+                    if (!proxmoxUtil.isVmRunning(server.getVmid())
+                            || (proxmoxUtil.shutdownVM(server.getVmid()) && proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid())))
+                    {
+                        if (proxmoxUtil.deleteVM(server.getVmid())) {
+                            server.setCreationStatus(Server.CreationStatus.SAVED_DNS_ID);
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                case SAVED_DNS_ID:
+                case HAS_DNS_RECORD:
+                    if (domainUtil.deleteDnsRecord(server.getDnsId())) {
+                        server.setCreationStatus(Server.CreationStatus.ASSIGNED);
+                    } else {
+                        break;
+                    }
+                case ASSIGNED:
+                    if (clientServerUtil.unassignUserServer(server)) {
+                        server.setFound(false);
+                        server.setCreationStatus(Server.CreationStatus.VERIFIED_NAME);
+                    }
+            }
+        } catch (ProxmoxUtil.InvalidVmStateException e) {
+            logger.error("Server Rollback Error: " + server.getName() + "(" + server.getVmid() + ")");
+            e.printStackTrace();
         }
-
-        // Save dnsId to database
-        server.setDnsId(dnsId);
-        if(!assignedServerDAO.update(server)){
-            node.put("error", "Failed to update server dnsId.");
-            return node;
-        }
-
-        // Create a vm from template and retrieve dhcp assigned ip
-        String dhcpIp = createProxServer(server.getVmid(), serverName);
-        if(dhcpIp.isEmpty()){
-            node.put("error", "Failed to create server.");
-            return node;
-        }
-
-        // Set the vm's ip to a static ip defined in the server database entry
-        if(!clientServerUtil.updateServerIp(dhcpIp, server.getIpAddress())) {
-            node.put("error", "Failed to connect server to valid ip address.");
-            return node;
-        }
-
-        // Shutdown vm to apply ip on startup
-        proxmoxUtil.shutdownVM(server.getVmid());
-
-        // Update proxy config to route traffic to the server
-        // TODO: 4/17/2022 check return value;
-        reverseProxyUtil.addHostEntry(server);
-
-        // Confirm server is stopped
-        if(!proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid())){
-            node.put("error", "Failed to shutdown server.");
-            return node;
-        }
-
-        node.put("vmid", server.getVmid());
-        node.put("success", true);
-
-        return node;
     }
 
     private boolean serverNameConforms(String serverName) {
@@ -117,25 +181,6 @@ public class ServerService implements IServerService {
         Matcher matcher = pattern.matcher(serverName);
 
         return !matcher.find();
-    }
-
-    // ProxmoxUtil 'retry' methods must be called from outside class
-    private String createProxServer(int vmid, String vmName) {
-        if(proxmoxUtil.cloneVM(vmid, vmName)){
-            try {
-                if (proxmoxUtil.startVM(vmid)) {
-                    String ipAddress = proxmoxUtil.getServerIp(vmid);
-
-                    if (!ipAddress.trim().isEmpty()) {
-                        return ipAddress;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        return "";
     }
 
     /**
@@ -245,8 +290,7 @@ public class ServerService implements IServerService {
         if(server.isFound()
             && !proxmoxUtil.isVmRunning(vmid)
             && proxmoxUtil.deleteVM(vmid)
-            && assignedServerDAO.delete(vmid)
-            && availableServerDAO.save(server)
+            && clientServerUtil.unassignUserServer(server)
             && domainUtil.deleteDnsRecord(server.getDnsId()))
         {
             return reverseProxyUtil.deleteHostEntry(server);
@@ -279,5 +323,11 @@ public class ServerService implements IServerService {
         }
 
         return new JSONObject();
+    }
+
+    public class ServerCreationException extends Exception {
+        public ServerCreationException(Server server) {
+            super("Error occurred during the creation of server " + server.getName() + "(" + server.getVmid() + ")");
+        }
     }
 }

@@ -7,6 +7,7 @@ import com.t8webs.enterprise.dto.Server;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.text.MessageFormat;
 import java.util.Properties;
 
 @Component
+@Profile("dev")
 public class ReverseProxyUtil implements IReverseProxyUtil {
 
     private static Properties properties;

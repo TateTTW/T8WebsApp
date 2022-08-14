@@ -25,6 +25,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
             server.setIpAddress("192.168.90."+i);
             server.setUsername("test@domain.com");
             server.setName("T8Server"+i);
+            server.setCreationStatus(Server.CreationStatus.COMPLETED);
             server.setFound(true);
             servers.put(server.getVmid(), server);
         }

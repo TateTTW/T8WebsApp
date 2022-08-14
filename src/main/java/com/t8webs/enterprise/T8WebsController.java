@@ -3,6 +3,7 @@ package com.t8webs.enterprise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.service.IServerService;
 import com.t8webs.enterprise.utils.ProxmoxUtil;
 import kong.unirest.json.JSONObject;
@@ -44,12 +45,13 @@ public class T8WebsController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
-            ObjectNode responseNode = serverService.assignUserServer(user.getAttribute("email"), serverName);
-            if(responseNode.get("success").booleanValue()){
-                return new ResponseEntity(responseNode, headers, HttpStatus.OK);
-            }
-            else if (responseNode.has("error")) {
-                return new ResponseEntity(responseNode.get("error"), headers, HttpStatus.INTERNAL_SERVER_ERROR);
+            Server.CreationStatus status = serverService.addServer(user.getAttribute("email"), serverName.trim());
+            if (status == Server.CreationStatus.COMPLETED) {
+                return new ResponseEntity(headers, HttpStatus.OK);
+            } else if (status == Server.CreationStatus.BEGIN) {
+                return new ResponseEntity(headers, HttpStatus.CONFLICT);
+            } else if (status == Server.CreationStatus.VERIFIED_NAME) {
+                return new ResponseEntity(headers, HttpStatus.NO_CONTENT);
             }
         } catch (Exception e) {
             e.printStackTrace();

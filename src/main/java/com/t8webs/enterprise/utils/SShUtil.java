@@ -1,12 +1,14 @@
 package com.t8webs.enterprise.utils;
 
 import com.jcraft.jsch.*;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
 @Component
-public class SShUtils implements ISShUtils {
+@Profile("dev")
+public class SShUtil implements ISShUtil {
 
     private static Properties config;
     static {
