@@ -14,11 +14,9 @@ import java.util.Properties;
  */
 public class DbQuery {
 
-    private String tableName;
-
-    private StringBuffer whereCondition;
-
-    private HashMap<String, Object> columnValues;
+    private String tableName = "";
+    private StringBuffer whereCondition = new StringBuffer();
+    private HashMap<String, Object> columnValues = new HashMap<>();
 
     /**
      * Method for Subclasses to set the table name for their corresponding table
@@ -26,7 +24,7 @@ public class DbQuery {
      * @param tableName Name of the database table
      */
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        this.tableName = tableName != null ? tableName : "";
     }
 
     /**
@@ -36,12 +34,11 @@ public class DbQuery {
      * @param value String value required in the column
      */
     public void addWhere(String column, String value) {
-        if(column == null || value == null) {
+        if (column == null || value == null) {
             return;
         }
 
-        if(this.whereCondition == null) {
-            this.whereCondition = new StringBuffer();
+        if (this.whereCondition.isEmpty()) {
             this.whereCondition.append(" WHERE ");
         } else {
             this.whereCondition.append(" AND ");
@@ -49,12 +46,11 @@ public class DbQuery {
 
         this.whereCondition.append(column);
 
-        if(value.equalsIgnoreCase("NULL")){
+        if (value.equalsIgnoreCase("NULL")) {
             this.whereCondition.append(" IS NULL");
         } else {
             this.whereCondition.append(" = '").append(value).append("'");
         }
-
     }
 
     /**
@@ -64,12 +60,11 @@ public class DbQuery {
      * @param value integer value required in the column
      */
     public void addWhere(String column, int value) {
-        if(column == null) {
+        if (column == null) {
             return;
         }
 
-        if(this.whereCondition == null) {
-            this.whereCondition = new StringBuffer();
+        if (this.whereCondition.isEmpty()) {
             this.whereCondition.append(" WHERE ");
         } else {
             this.whereCondition.append(" AND ");
@@ -86,11 +81,7 @@ public class DbQuery {
     public ArrayList<HashMap<String, Object>> select() {
         StringBuffer sql = new StringBuffer();
 
-        sql.append("SELECT * FROM ").append(tableName);
-        if (whereCondition != null) {
-            sql.append(whereCondition);
-            whereCondition = null;
-        }
+        sql.append("SELECT * FROM ").append(tableName).append(whereCondition);
 
         return execute(sql.toString());
     }
@@ -102,10 +93,9 @@ public class DbQuery {
      * @param value value to be populated into the given column
      */
     public void setColumnValue(String column, Object value) {
-        if(columnValues == null)
-            columnValues = new HashMap<>();
-
-        columnValues.put(column, value);
+        if (column != null && value != null) {
+            columnValues.put(column, value);
+        }
     }
 
     /**
@@ -114,8 +104,11 @@ public class DbQuery {
      * @return boolean indicating whether update was successful
      */
     public boolean update() {
-        StringBuffer sql = new StringBuffer();
+        if (whereCondition.isEmpty()) {
+            return false;
+        }
 
+        StringBuffer sql = new StringBuffer();
         sql.append("UPDATE ").append(tableName).append(" SET ");
 
         int index = 0;
@@ -126,23 +119,18 @@ public class DbQuery {
 
             sql.append(column).append(" = ");
 
-            if(value instanceof String || value instanceof Timestamp) {
+            if (value instanceof String || value instanceof Timestamp) {
                 sql.append("'").append(value.toString()).append("'");
             } else {
                 sql.append(value);
             }
 
-            if(index < columnValues.size()) {
+            if (index < columnValues.size()) {
                 sql.append(", ");
             }
         }
 
-        columnValues = null;
-
-        if(whereCondition != null) {
-            sql.append(whereCondition);
-            whereCondition = null;
-        }
+        sql.append(whereCondition);
 
         try {
             return executeUpdate(sql.toString());
@@ -159,36 +147,29 @@ public class DbQuery {
      */
     public boolean insert() throws IntegrityConstraintViolationException {
         StringBuffer sql = new StringBuffer();
-        sql.append("INSERT INTO ").append(tableName).append("(");
+        StringBuffer keyStr = new StringBuffer();
+        StringBuffer valStr = new StringBuffer();
 
-        int colIndex = 0;
+        int index = 0;
         for(Map.Entry entry: columnValues.entrySet()) {
-            colIndex++;
-            sql.append(entry.getKey().toString());
-
-            if(colIndex < columnValues.entrySet().size()) {
-                sql.append(",");
-            }
-        }
-        sql.append(") VALUES (");
-        int valIndex = 0;
-        for(Map.Entry entry: columnValues.entrySet()) {
-            valIndex++;
+            index++;
+            Object key = entry.getKey().toString();
             Object value = entry.getValue();
 
-            if(value instanceof String || value instanceof Timestamp) {
-                sql.append("'").append(value.toString()).append("'");
+            keyStr.append(key);
+
+            if (value instanceof String || value instanceof Timestamp) {
+                valStr.append("'").append(value.toString()).append("'");
             } else {
-                sql.append(value);
+                valStr.append(value);
             }
 
-            if(valIndex < columnValues.entrySet().size()) {
-                sql.append(",");
+            if(index < columnValues.entrySet().size()) {
+                keyStr.append(",");
+                valStr.append(",");
             }
         }
-        sql.append(")");
-
-        columnValues = null;
+        sql.append("INSERT INTO ").append(tableName).append(" (").append(keyStr).append(") VALUES (").append(valStr).append(")");
 
         return executeUpdate(sql.toString());
     }
@@ -199,15 +180,12 @@ public class DbQuery {
      * @return boolean indicating whether delete was successful
      */
     public boolean delete() {
-        StringBuffer sql = new StringBuffer();
-        sql.append("DELETE FROM ").append(tableName);
-
-        if(whereCondition != null) {
-            sql.append(whereCondition);
-            whereCondition = null;
-        } else {
+        if (whereCondition.isEmpty()) {
             return false;
         }
+
+        StringBuffer sql = new StringBuffer();
+        sql.append("DELETE FROM ").append(tableName).append(whereCondition);
 
         try {
             return executeUpdate(sql.toString());
@@ -285,7 +263,7 @@ public class DbQuery {
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 int columnType = metaData.getColumnType(i);
                 Object value;
-                if(columnType == 93) {
+                if (columnType == 93) {
                     value = resultSet.getTimestamp(i);
                 } else {
                     value = resultSet.getObject(i);
