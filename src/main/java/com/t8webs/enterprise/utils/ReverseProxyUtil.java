@@ -18,33 +18,33 @@ import java.util.Properties;
 @Profile("dev")
 public class ReverseProxyUtil implements IReverseProxyUtil {
 
-    private static Properties properties;
+    private static final Properties PROPERTIES;
     static {
-        properties = new Properties();
+        PROPERTIES = new Properties();
         try {
-            properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+            PROPERTIES.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static final String postHostEntryURL = properties.getProperty("postHostEntryURL");
-    private static final String deleteHostEntryURL = properties.getProperty("deleteHostEntryURL");
-    private static final String dataplaneAuthKey = properties.getProperty("dataplaneAuthKey");
-    private static final String domainName = properties.getProperty("domainName");
-    private static final String subdomainFormat = "{0}.{1}";
+    private static final String POST_HOST_ENTRY_URL = PROPERTIES.getProperty("postHostEntryURL");
+    private static final String DELETE_HOST_ENTRY_URL = PROPERTIES.getProperty("deleteHostEntryURL");
+    private static final String DATAPLANE_AUTH_KEY = PROPERTIES.getProperty("dataplaneAuthKey");
+    private static final String DOMAIN_NAME = PROPERTIES.getProperty("domainName");
+    private static final String SUBDOMAIN_FORMAT = "{0}.{1}";
 
     @Override
     public boolean addHostEntry(Server server) {
-        String subdomain = MessageFormat.format(subdomainFormat, server.getName().toLowerCase().trim(), domainName.trim());
+        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, server.getName().toLowerCase().trim(), DOMAIN_NAME.trim());
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode jsonNode = mapper.createObjectNode();
         jsonNode.put("key", subdomain);
         jsonNode.put("value", String.valueOf(server.getVmid()));
 
-        HttpResponse<JsonNode> response = Unirest.post(postHostEntryURL)
-                .header("Authorization", dataplaneAuthKey)
+        HttpResponse<JsonNode> response = Unirest.post(POST_HOST_ENTRY_URL)
+                .header("Authorization", DATAPLANE_AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .body(jsonNode.toPrettyString())
                 .asJson();
@@ -54,11 +54,11 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
 
     @Override
     public boolean deleteHostEntry(Server server) {
-        String subdomain = MessageFormat.format(subdomainFormat, server.getName().toLowerCase().trim(), domainName.trim());
-        String url = MessageFormat.format(deleteHostEntryURL, subdomain);
+        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, server.getName().toLowerCase().trim(), DOMAIN_NAME.trim());
+        String url = MessageFormat.format(DELETE_HOST_ENTRY_URL, subdomain);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)
-                .header("Authorization", dataplaneAuthKey)
+                .header("Authorization", DATAPLANE_AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .asJson();
 

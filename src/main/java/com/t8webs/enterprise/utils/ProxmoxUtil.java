@@ -19,27 +19,27 @@ import java.util.Properties;
 @Profile("dev")
 public class ProxmoxUtil implements IProxmoxUtil {
 
-    private static Properties properties;
+    private static final Properties PROPERTIES;
     static {
-        properties = new Properties();
+        PROPERTIES = new Properties();
         try {
-            properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+            PROPERTIES.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
         Unirest.config().verifySsl(false);
     }
 
-    private static final String DOMAIN = properties.getProperty("proxmoxIP");
-    private static final String TOKEN = properties.getProperty("promoxToken");
-    private static final String CLONE_VM_URL = properties.getProperty("cloneVmUrl");
-    private static final String DELETE_VM_URL = properties.getProperty("deleteVmUrl");
-    private static final String START_VM_URL = properties.getProperty("startVmUrl");
-    private static final String SHUTDOWN_VM_URL = properties.getProperty("shutdownVmUrl");
-    private static final String REBOOT_VM_URL = properties.getProperty("rebootVmUrl");
-    private static final String GET_VM_IP_URL = properties.getProperty("getVmIpUrl");
-    private static final String GET_VM_DATA_URL = properties.getProperty("getVmDataUrl");
-    private static final String STATUS_VM_URL = properties.getProperty("statusVmUrl");
+    private static final String DOMAIN = PROPERTIES.getProperty("proxmoxIP");
+    private static final String TOKEN = PROPERTIES.getProperty("promoxToken");
+    private static final String CLONE_VM_URL = PROPERTIES.getProperty("cloneVmUrl");
+    private static final String DELETE_VM_URL = PROPERTIES.getProperty("deleteVmUrl");
+    private static final String START_VM_URL = PROPERTIES.getProperty("startVmUrl");
+    private static final String SHUTDOWN_VM_URL = PROPERTIES.getProperty("shutdownVmUrl");
+    private static final String REBOOT_VM_URL = PROPERTIES.getProperty("rebootVmUrl");
+    private static final String GET_VM_IP_URL = PROPERTIES.getProperty("getVmIpUrl");
+    private static final String GET_VM_DATA_URL = PROPERTIES.getProperty("getVmDataUrl");
+    private static final String STATUS_VM_URL = PROPERTIES.getProperty("statusVmUrl");
 
     private static int minVmid = 120;
 

@@ -22,53 +22,52 @@ public class DomainUtil implements IDomainUtil {
     @Autowired
     IAssignedServerDAO assignedServerDAO;
 
-    private static Properties properties;
+    private static final Properties PROPERTIES;
     static {
-        properties = new Properties();
+        PROPERTIES = new Properties();
         try {
-            properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+            PROPERTIES.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static String authEmail = properties.getProperty("authEmail");
-    private static String authKey = properties.getProperty("authKey");
-    private static String zoneId = properties.getProperty("zoneId");
-    private static String domainName = properties.getProperty("domainName");
-    private static String addDomainUrl = properties.getProperty("addDomainUrl");
-    private static String dnsRecordUrl = properties.getProperty("dnsRecordUrl");
+    private static final String AUTH_EMAIL = PROPERTIES.getProperty("authEmail");
+    private static final String AUTH_KEY = PROPERTIES.getProperty("authKey");
+    private static final String ZONE_ID = PROPERTIES.getProperty("zoneId");
+    private static final String DOMAIN_NAME = PROPERTIES.getProperty("domainName");
+    private static final String ADD_DOMAIN_URL = PROPERTIES.getProperty("addDomainUrl");
+    private static final String DNS_RECORD_URL = PROPERTIES.getProperty("dnsRecordUrl");
 
     @Override
     public boolean deleteDnsRecord(String domainId) {
-        String url = MessageFormat.format(dnsRecordUrl, zoneId, domainId);
+        String url = MessageFormat.format(DNS_RECORD_URL, ZONE_ID, domainId);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)
-                .header("X-Auth-Email", authEmail)
-                .header("X-Auth-Key", authKey)
+                .header("X-Auth-Email", AUTH_EMAIL)
+                .header("X-Auth-Key", AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
     public boolean renameDnsRecord(String domainName, String domainId) {
-
-        String url = MessageFormat.format(dnsRecordUrl, zoneId, domainId);
+        String url = MessageFormat.format(DNS_RECORD_URL, ZONE_ID, domainId);
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode jsonNode = mapper.createObjectNode();
         jsonNode.put("name", domainName.trim());
 
         HttpResponse<JsonNode> response = Unirest.patch(url)
-                .header("X-Auth-Email", authEmail)
-                .header("X-Auth-Key", authKey)
+                .header("X-Auth-Email", AUTH_EMAIL)
+                .header("X-Auth-Key", AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .body(jsonNode.toPrettyString())
                 .asJson();
 
-        return response.getStatus() == 200;
+        return response.isSuccess();
     }
 
     @Override
@@ -76,17 +75,17 @@ public class DomainUtil implements IDomainUtil {
         ObjectMapper mapper = new ObjectMapper();
 
         ObjectNode jsonNode = mapper.createObjectNode();
-        jsonNode.put("content", DomainUtil.domainName);
+        jsonNode.put("content", DomainUtil.DOMAIN_NAME);
         jsonNode.put("name", domainName.trim());
         jsonNode.put("type", "CNAME");
         jsonNode.put("ttl", 1);
         jsonNode.put("proxied", true);
 
-        String url = MessageFormat.format(addDomainUrl, zoneId);
+        String url = MessageFormat.format(ADD_DOMAIN_URL, ZONE_ID);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("X-Auth-Email", authEmail)
-                .header("X-Auth-Key", authKey)
+                .header("X-Auth-Email", AUTH_EMAIL)
+                .header("X-Auth-Key", AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .body(jsonNode.toPrettyString())
                 .asJson();

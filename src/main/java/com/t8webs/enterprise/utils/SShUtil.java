@@ -10,10 +10,10 @@ import java.util.Properties;
 @Profile("dev")
 public class SShUtil implements ISShUtil {
 
-    private static Properties config;
+    private static final Properties CONFIG;
     static {
-        config = new Properties();
-        config.put("StrictHostKeyChecking", "no");
+        CONFIG = new Properties();
+        CONFIG.put("StrictHostKeyChecking", "no");
     }
 
     @Override
@@ -26,7 +26,7 @@ public class SShUtil implements ISShUtil {
             JSch jsch = new JSch();
 
             jschSession = jsch.getSession(user, ipAddress, 22);
-            jschSession.setConfig(config);
+            jschSession.setConfig(CONFIG);
             jschSession.setPassword(pass);
 
             jschSession.connect(10000);
@@ -63,7 +63,7 @@ public class SShUtil implements ISShUtil {
             JSch jsch = new JSch();
 
             jschSession = jsch.getSession(user, ipAddress, 22);
-            jschSession.setConfig(config);
+            jschSession.setConfig(CONFIG);
             jschSession.setPassword(pass);
 
             jschSession.connect(10000);

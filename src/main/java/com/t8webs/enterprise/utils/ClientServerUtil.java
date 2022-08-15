@@ -24,25 +24,25 @@ public class ClientServerUtil implements IClientServerUtil {
     @Autowired
     IAssignedServerDAO assignedServerDAO;
 
-    private static final Properties properties;
+    private static final Properties PROPERTIES;
     static {
-        properties = new Properties();
+        PROPERTIES = new Properties();
         try {
-            properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+            PROPERTIES.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static final String rootUser = properties.getProperty("clientRootUser");
-    private static final String rootPass = properties.getProperty("clientRootPass");
-    private static final String clientUser = properties.getProperty("clientUser");
-    private static final String clientPass = properties.getProperty("clientPass");
-    private static final String localIpCfg = properties.getProperty("localIpCfg");
-    private static final String remoteIpCfg = properties.getProperty("remoteIpCfg");
-    private static final String stopBuildCmd = properties.getProperty("stopBuildCmd");
-    private static final String runBuildCmd = properties.getProperty("runBuildCmd");
-    private static final String remoteBuildFile = properties.getProperty("remoteBuildFile");
+    private static final String CLIENT_ROOT_USER = PROPERTIES.getProperty("clientRootUser");
+    private static final String CLIENT_ROOT_PASS = PROPERTIES.getProperty("clientRootPass");
+    private static final String CLIENT_USER = PROPERTIES.getProperty("clientUser");
+    private static final String CLIENT_PASS = PROPERTIES.getProperty("clientPass");
+    private static final String LOCAL_IP_CFG = PROPERTIES.getProperty("localIpCfg");
+    private static final String REMOTE_IP_CFG = PROPERTIES.getProperty("remoteIpCfg");
+    private static final String STOP_BUILD_CMD = PROPERTIES.getProperty("stopBuildCmd");
+    private static final String RUN_BUILD_CMD = PROPERTIES.getProperty("runBuildCmd");
+    private static final String REMOTE_BUILD_FILE = PROPERTIES.getProperty("remoteBuildFile");
 
     @Override
     @Retryable(maxAttempts=20, value= DbQuery.IntegrityConstraintViolationException.class, backoff=@Backoff(delay = 100))
@@ -74,7 +74,7 @@ public class ClientServerUtil implements IClientServerUtil {
 
         File tempFile = File.createTempFile("temp_ip_config", ".yaml");
 
-        try (InputStream inputStream = getClass().getResourceAsStream(localIpCfg);
+        try (InputStream inputStream = getClass().getResourceAsStream(LOCAL_IP_CFG);
              BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
              BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile)))
         {
@@ -89,7 +89,7 @@ public class ClientServerUtil implements IClientServerUtil {
             br.close();
             bw.close();
 
-            return sshUtil.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
+            return sshUtil.doSecureFileTransfer(CLIENT_ROOT_USER, CLIENT_ROOT_PASS, oldIp, tempFile.getPath(), REMOTE_IP_CFG);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -101,9 +101,9 @@ public class ClientServerUtil implements IClientServerUtil {
 
     @Override
     public boolean deployBuild(String ipAddress, MultipartFile multipartFile) throws IOException {
-        return (this.sshUtil.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)
+        return (this.sshUtil.doSecureShellCmd(CLIENT_USER, CLIENT_PASS, ipAddress, STOP_BUILD_CMD)
                         && updateBuildFile(ipAddress, multipartFile)
-                        && this.sshUtil.doSecureShellCmd(clientUser, clientPass, ipAddress, runBuildCmd));
+                        && this.sshUtil.doSecureShellCmd(CLIENT_USER, CLIENT_PASS, ipAddress, RUN_BUILD_CMD));
     }
 
     @Override
@@ -116,7 +116,7 @@ public class ClientServerUtil implements IClientServerUtil {
 
         try {
             multipartFile.transferTo(tempFile);
-            return sshUtil.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
+            return sshUtil.doSecureFileTransfer(CLIENT_USER, CLIENT_PASS, ipAddress, tempFile.getPath(), REMOTE_BUILD_FILE);
 
         } catch (IOException e) {
             e.printStackTrace();
