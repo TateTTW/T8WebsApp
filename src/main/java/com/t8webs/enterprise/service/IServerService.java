@@ -37,7 +37,7 @@ public interface IServerService {
 
     boolean rebootVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException;
 
-    boolean deleteVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException;
+    boolean deleteVM(String username, int vmid);
 
     String getVmStatus(String username, int vmid);
 

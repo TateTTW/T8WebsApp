@@ -107,34 +107,33 @@ public class ServerService implements IServerService {
             }
 
             // Server creation has completed successfully
-            server.setCreationStatus(Server.CreationStatus.COMPLETED);
             status = Server.CreationStatus.COMPLETED;
+            server.setCreationStatus(status);
+            assignedServerDAO.update(server);
 
             // Wait for server to complete shutdown
-            proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid());
-
+            try {
+                proxmoxUtil.reachedState(ProxmoxUtil.State.STOPPED, server.getVmid());
+            } catch (ProxmoxUtil.InvalidVmStateException e) {
+                e.printStackTrace();
+            }
         } catch (Exception e) {
-            logger.error("Failed to add server: " + server.getName() + "(" + server.getVmid() + ")");
-            logger.error("Creation status: " + status.name());
+            logger.error("Failed to add server: " + server.toString());
             e.printStackTrace();
 
             server.setCreationStatus(status);
             rollbackServerCreation(server);
         }
 
-        if (server.isFound()) {
-            assignedServerDAO.update(server);
-        }
-
         return status;
     }
 
     private void rollbackServerCreation(Server server) {
-        logger.error("Rollback Server: " + server.getName() + "(" + server.getVmid() + ")");
         Server.CreationStatus status = server.getCreationStatus();
 
         try {
             switch (status) {
+                case COMPLETED:
                 case HAS_PROXY_CFG:
                     if (reverseProxyUtil.deleteHostEntry(server)) {
                         server.setCreationStatus(Server.CreationStatus.HAS_VM);
@@ -162,13 +161,17 @@ public class ServerService implements IServerService {
                     }
                 case ASSIGNED:
                     if (clientServerUtil.unassignUserServer(server)) {
-                        server.setFound(false);
                         server.setCreationStatus(Server.CreationStatus.VERIFIED_NAME);
+                        server.setFound(false);
                     }
             }
         } catch (ProxmoxUtil.InvalidVmStateException e) {
             logger.error("Server Rollback Error: " + server.getName() + "(" + server.getVmid() + ")");
             e.printStackTrace();
+        }
+
+        if (server.isFound()) {
+            assignedServerDAO.update(server);
         }
     }
 
@@ -284,16 +287,12 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deleteVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
+    public boolean deleteVM(String username, int vmid) {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()
-            && !proxmoxUtil.isVmRunning(vmid)
-            && proxmoxUtil.deleteVM(vmid)
-            && clientServerUtil.unassignUserServer(server)
-            && domainUtil.deleteDnsRecord(server.getDnsId()))
-        {
-            return reverseProxyUtil.deleteHostEntry(server);
+        if (server.isFound() && !proxmoxUtil.isVmRunning(vmid)) {
+            rollbackServerCreation(server);
+            return !server.isFound();
         }
 
         return false;

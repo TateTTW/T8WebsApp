@@ -65,12 +65,8 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            if(serverService.deleteVM(user.getAttribute("email"), vmid)){
-                return new ResponseEntity(headers, HttpStatus.OK);
-            }
-        } catch (ProxmoxUtil.InvalidVmStateException e) {
-            e.printStackTrace();
+        if (serverService.deleteVM(user.getAttribute("email"), vmid)) {
+            return new ResponseEntity(headers, HttpStatus.OK);
         }
 
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
