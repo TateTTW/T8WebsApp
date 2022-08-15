@@ -18,7 +18,7 @@ export class RamGraphComponent implements OnInit {
   };
   //Initializing Primary Y Axis
   public primaryYAxis: Object = {
-    title: 'MB',
+    title: 'Mb',
     labelFormat: '{value} Mb',
     minimum: 0,
     lineStyle: { width: 0 },

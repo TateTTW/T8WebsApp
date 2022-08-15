@@ -18,7 +18,7 @@
       </div>
       <div id="netGraph" class="e-panel" data-row="0" data-col="2" data-sizeX="2" data-sizeY="2">
         <div class="e-panel-header graphLabel">Network Traffic</div>
-        <net-graph *ngIf="loaded" [netInData]="netInData" [netOutData]="netOutData"></net-graph>
+        <net-graph *ngIf="loaded" [netData]="netData"></net-graph>
       </div>
       <div id="cpuGraph" class="e-panel" data-row="2" data-col="0" data-sizeX="2" data-sizeY="2">
         <div class="e-panel-header graphLabel">CPU Usage</div>

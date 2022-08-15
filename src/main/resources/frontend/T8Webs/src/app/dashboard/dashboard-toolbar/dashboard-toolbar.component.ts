@@ -1,5 +1,5 @@
 import {
-  AfterViewInit,
+  AfterViewChecked,
   Component,
   EventEmitter,
   Input,
@@ -15,14 +15,13 @@ import {User} from "../dto/user";
 import {NodeType, TreeNode} from "../dashboard-tree/TreeNode";
 import {TemplateBinding} from "@angular/compiler";
 import {Job, JobType} from "../server-dialog/Job";
-import {DashboardService} from "../dashboard.service";
 
 @Component({
   selector: 'dashboard-toolbar',
   templateUrl: './dashboard-toolbar.component.html',
   styleUrls: ['./dashboard-toolbar.component.less']
 })
-export class DashboardToolbarComponent implements OnInit, AfterViewInit, OnChanges {
+export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnChanges {
   // View elements
   @ViewChild('toolbar') toolbar?: ToolbarComponent;
   @ViewChild('loginAndOut') loginAndOut?: TemplateBinding;
@@ -57,7 +56,9 @@ export class DashboardToolbarComponent implements OnInit, AfterViewInit, OnChang
 
   ngOnInit(): void { }
 
-  ngAfterViewInit(): void { }
+  ngAfterViewChecked(): void {
+    this.toolbar?.refreshOverflow();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     const selectedTreeNode = changes['selectedTreeNode'];

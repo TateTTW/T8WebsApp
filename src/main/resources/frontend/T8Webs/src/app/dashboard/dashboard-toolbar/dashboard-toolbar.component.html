@@ -17,7 +17,7 @@
         <i class="fa fa-gear"></i>Edit
       </button>
     </div>
-    <ejs-toolbar id="shoppingtoolbar" #toolbar (clicked)="toolbarClick($event)" (created)='created()'>
+    <ejs-toolbar #toolbar (clicked)="toolbarClick($event)" (created)='created()'>
       <e-items>
           <e-item prefixIcon="fa fa-plus" text="Add" cssClass="group" [visible]="false"></e-item>
           <e-item prefixIcon="fa fa-play" text="Start" cssClass="item" [visible]="false"></e-item>

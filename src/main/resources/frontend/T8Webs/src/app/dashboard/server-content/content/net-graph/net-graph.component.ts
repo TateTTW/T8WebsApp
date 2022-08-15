@@ -7,23 +7,22 @@ import {Component, Input, OnInit} from '@angular/core';
 })
 export class NetGraphComponent implements OnInit {
   // Input variables
-  @Input() netInData: {x:Date,y:string}[] = [];
-  @Input() netOutData: {x:Date,y:string}[] = [];
+  @Input() netData: NetData = {unit: 'Kb', netIn: [], netOut: []};
   //Initializing Primary X Axis
   public primaryXAxis: Object = {
     valueType: 'DateTime',
     labelFormat: 'h:mm',
-    majorGridLines: { width: 0 },
+    majorGridLines: {width: 0},
     intervalType: 'Minutes',
     edgeLabelPlacement: 'Shift'
   };
   //Initializing Primary Y Axis
   public primaryYAxis: Object = {
-    title: 'KB',
+    title: 'Kb',
     labelFormat: '{value} Kb',
-    lineStyle: { width: 0 },
-    majorTickLines: { width: 0 },
-    minorTickLines: { width: 0 }
+    lineStyle: {width: 0},
+    majorTickLines: {width: 0},
+    minorTickLines: {width: 0}
   };
 
   public marker: Object = {
@@ -36,11 +35,24 @@ export class NetGraphComponent implements OnInit {
     }
   };
 
-  tooltip = { enable: true, header: '<b>${series.name}</b>', format: '<b>${point.x} : ${point.y}</b>' };
+  tooltip = {enable: true, header: '<b>${series.name}</b>', format: '<b>${point.x} : ${point.y}</b>'};
 
-  constructor() { }
+  constructor() {
+  }
 
   ngOnInit(): void {
   }
 
+  axisLabelRender(event: any) {
+    if(event.axis.name == 'primaryYAxis'){
+      event.axis.title = this.netData.unit;
+      event.axis.labelFormat = '{value} ' + this.netData.unit;
+    }
+  }
+}
+
+export interface NetData {
+  unit: string,
+  netIn: {x:Date,y:string}[],
+  netOut: {x:Date,y:string}[]
 }

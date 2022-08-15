@@ -6,6 +6,7 @@ import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import org.springframework.context.annotation.Profile;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import java.text.MessageFormat;
 import java.util.Properties;
 
 @Component
+@Profile("dev")
 public class ProxmoxUtil implements IProxmoxUtil {
 
     private static Properties properties;
@@ -133,7 +135,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=24, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
+    @Retryable(maxAttempts=50, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean reachedState(State expectedState, int vmid) throws InvalidVmStateException {
 
         if(isVmLocked(vmid)){
@@ -149,7 +151,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     @Override
-    @Retryable(maxAttempts=30, value=InvalidVmStateException.class, backoff=@Backoff(delay = 4000))
+    @Retryable(maxAttempts=30, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean startVM(int vmid) throws InvalidVmStateException {
         if(vmid < minVmid){
             return false;
@@ -257,7 +259,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                     for(int ii=0; ii<ipAddresses.length(); ii++){
                         JSONObject ipAddress = ipAddresses.getJSONObject(ii);
                         if(ipAddress.getString("ip-address-type").equals("ipv4") && ipAddress.getString("ip-address") != null){
-                            return ipAddress.getString("ip-address");
+                            return ipAddress.getString("ip-address").trim();
                         }
                     }
                 }

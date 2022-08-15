@@ -1,6 +1,5 @@
 package com.t8webs.enterprise.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dao.IAssignedServerDAO;
@@ -19,15 +18,13 @@ import java.util.Properties;
 public class ClientServerUtil implements IClientServerUtil {
 
     @Autowired
-    ISShUtils sshUtils;
+    ISShUtil sshUtil;
     @Autowired
     IAvailableServerDAO availableServerDAO;
     @Autowired
     IAssignedServerDAO assignedServerDAO;
 
-    private ObjectMapper mapper = new ObjectMapper();
-
-    private static Properties properties;
+    private static final Properties properties;
     static {
         properties = new Properties();
         try {
@@ -37,15 +34,15 @@ public class ClientServerUtil implements IClientServerUtil {
         }
     }
 
-    private static String rootUser = properties.getProperty("clientRootUser");
-    private static String rootPass = properties.getProperty("clientRootPass");
-    private static String clientUser = properties.getProperty("clientUser");
-    private static String clientPass = properties.getProperty("clientPass");
-    private static String localIpCfg = properties.getProperty("localIpCfg");
-    private static String remoteIpCfg = properties.getProperty("remoteIpCfg");
-    private static String stopBuildCmd = properties.getProperty("stopBuildCmd");
-    private static String runBuildCmd = properties.getProperty("runBuildCmd");
-    private static String remoteBuildFile = properties.getProperty("remoteBuildFile");
+    private static final String rootUser = properties.getProperty("clientRootUser");
+    private static final String rootPass = properties.getProperty("clientRootPass");
+    private static final String clientUser = properties.getProperty("clientUser");
+    private static final String clientPass = properties.getProperty("clientPass");
+    private static final String localIpCfg = properties.getProperty("localIpCfg");
+    private static final String remoteIpCfg = properties.getProperty("remoteIpCfg");
+    private static final String stopBuildCmd = properties.getProperty("stopBuildCmd");
+    private static final String runBuildCmd = properties.getProperty("runBuildCmd");
+    private static final String remoteBuildFile = properties.getProperty("remoteBuildFile");
 
     @Override
     @Retryable(maxAttempts=20, value= DbQuery.IntegrityConstraintViolationException.class, backoff=@Backoff(delay = 100))
@@ -60,13 +57,15 @@ public class ClientServerUtil implements IClientServerUtil {
         server.setName(serverName);
 
         // throws DbQuery.IntegrityConstraintViolationException when another user is assigned server first
-        if(!assignedServerDAO.save(server)){
-            return new Server();
+        if(!(assignedServerDAO.save(server) && availableServerDAO.delete(server.getVmid()))){
+            server.setFound(false);
         }
 
-        availableServerDAO.delete(server.getVmid());
-
         return server;
+    }
+
+    public boolean unassignUserServer(Server server) {
+        return assignedServerDAO.delete(server.getVmid()) && availableServerDAO.save(server);
     }
 
     @Override
@@ -77,8 +76,8 @@ public class ClientServerUtil implements IClientServerUtil {
 
         try (InputStream inputStream = getClass().getResourceAsStream(localIpCfg);
              BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-             BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
-        ) {
+             BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile)))
+        {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.contains("#addressesPlaceholder")){
@@ -90,7 +89,7 @@ public class ClientServerUtil implements IClientServerUtil {
             br.close();
             bw.close();
 
-            return sshUtils.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
+            return sshUtil.doSecureFileTransfer(rootUser, rootPass, oldIp, tempFile.getPath(), remoteIpCfg);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -102,9 +101,9 @@ public class ClientServerUtil implements IClientServerUtil {
 
     @Override
     public boolean deployBuild(String ipAddress, MultipartFile multipartFile) throws IOException {
-        return (this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)
+        return (this.sshUtil.doSecureShellCmd(clientUser, clientPass, ipAddress, stopBuildCmd)
                         && updateBuildFile(ipAddress, multipartFile)
-                        && this.sshUtils.doSecureShellCmd(clientUser, clientPass, ipAddress, runBuildCmd));
+                        && this.sshUtil.doSecureShellCmd(clientUser, clientPass, ipAddress, runBuildCmd));
     }
 
     @Override
@@ -117,7 +116,7 @@ public class ClientServerUtil implements IClientServerUtil {
 
         try {
             multipartFile.transferTo(tempFile);
-            return sshUtils.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
+            return sshUtil.doSecureFileTransfer(clientUser, clientPass, ipAddress, tempFile.getPath(), remoteBuildFile);
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -23,6 +23,14 @@
     "target": "http://localhost:8080",
     "secure": false
   },
+  "/addServer": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/deleteServer": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
   "/deployBuild": {
     "target": "http://localhost:8080",
     "secure": false

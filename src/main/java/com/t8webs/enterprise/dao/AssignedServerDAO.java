@@ -26,6 +26,7 @@ public class AssignedServerDAO implements IAssignedServerDAO {
         query.setColumnValue("vmid", server.getVmid());
         query.setColumnValue("ipAddress", server.getIpAddress());
         query.setColumnValue("dnsId", server.getDnsId());
+        query.setColumnValue("creationStatus", server.getCreationStatus().name());
 
         return query.insert();
     }
@@ -109,6 +110,7 @@ public class AssignedServerDAO implements IAssignedServerDAO {
         DbQuery query = newQuery();
         query.setColumnValue("name", server.getName());
         query.setColumnValue("dnsId", server.getDnsId());
+        query.setColumnValue("creationStatus", server.getCreationStatus().name());
         query.addWhere("vmid", server.getVmid());
 
         return query.update();
@@ -138,6 +140,7 @@ public class AssignedServerDAO implements IAssignedServerDAO {
             server.setIpAddress((String) valuesMap.get("ipAddress"));
             server.setDnsId((String) valuesMap.get("dnsId"));
             server.setVmid((Integer) valuesMap.get("vmid"));
+            server.setCreationStatus((String) valuesMap.get("creationStatus"));
             server.setFound(true);
             servers.add(server);
         }

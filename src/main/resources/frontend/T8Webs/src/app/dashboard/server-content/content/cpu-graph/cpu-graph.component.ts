@@ -18,7 +18,7 @@ export class CpuGraphComponent implements OnInit {
   };
   //Initializing Primary Y Axis
   public primaryYAxis: Object = {
-    title: 'CPU Usage',
+    title: 'CPU %',
     labelFormat: '{value}%',
     minimum: 0,
     lineStyle: { width: 0 },

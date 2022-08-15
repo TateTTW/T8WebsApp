@@ -1,6 +1,6 @@
 package com.t8webs.enterprise.utils;
 
-public interface ISShUtils {
+public interface ISShUtil {
 
     boolean doSecureShellCmd(String user, String pass, String ipAddress, String cmd);
 
