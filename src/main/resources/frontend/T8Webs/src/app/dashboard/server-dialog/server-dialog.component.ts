@@ -114,7 +114,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
 
     DialogUtility.alert({
       title: 'Success',
-      content: "Traffic to the " + serverName + " subdomain will be forwarded to the server on port 8080",
+      content: "Traffic to " + serverName + ".T8Webs.com will be forwarded to this server using port 8080",
       showCloseIcon: true,
       closeOnEscape: true,
       animationSettings: { effect: 'Zoom' }

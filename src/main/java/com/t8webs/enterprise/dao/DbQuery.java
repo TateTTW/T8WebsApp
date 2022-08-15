@@ -147,16 +147,16 @@ public class DbQuery {
      */
     public boolean insert() throws IntegrityConstraintViolationException {
         StringBuffer sql = new StringBuffer();
-        StringBuffer keyStr = new StringBuffer();
+        StringBuffer colStr = new StringBuffer();
         StringBuffer valStr = new StringBuffer();
 
         int index = 0;
         for(Map.Entry entry: columnValues.entrySet()) {
             index++;
-            Object key = entry.getKey().toString();
+            String column = (String) entry.getKey();
             Object value = entry.getValue();
 
-            keyStr.append(key);
+            colStr.append(column);
 
             if (value instanceof String || value instanceof Timestamp) {
                 valStr.append("'").append(value.toString()).append("'");
@@ -165,11 +165,11 @@ public class DbQuery {
             }
 
             if(index < columnValues.entrySet().size()) {
-                keyStr.append(",");
+                colStr.append(",");
                 valStr.append(",");
             }
         }
-        sql.append("INSERT INTO ").append(tableName).append(" (").append(keyStr).append(") VALUES (").append(valStr).append(")");
+        sql.append("INSERT INTO ").append(tableName).append(" (").append(colStr).append(") VALUES (").append(valStr).append(")");
 
         return executeUpdate(sql.toString());
     }
