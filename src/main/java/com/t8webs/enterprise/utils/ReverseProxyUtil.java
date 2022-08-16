@@ -35,13 +35,13 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
     private static final String SUBDOMAIN_FORMAT = "{0}.{1}";
 
     @Override
-    public boolean addHostEntry(Server server) {
-        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, server.getName().toLowerCase().trim(), DOMAIN_NAME.trim());
+    public boolean addHostEntry(String serverName, int vmid) {
+        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode jsonNode = mapper.createObjectNode();
         jsonNode.put("key", subdomain);
-        jsonNode.put("value", String.valueOf(server.getVmid()));
+        jsonNode.put("value", String.valueOf(vmid));
 
         HttpResponse<JsonNode> response = Unirest.post(POST_HOST_ENTRY_URL)
                 .header("Authorization", DATAPLANE_AUTH_KEY)
@@ -53,8 +53,8 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
     }
 
     @Override
-    public boolean deleteHostEntry(Server server) {
-        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, server.getName().toLowerCase().trim(), DOMAIN_NAME.trim());
+    public boolean deleteHostEntry(String serverName) {
+        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
         String url = MessageFormat.format(DELETE_HOST_ENTRY_URL, subdomain);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)

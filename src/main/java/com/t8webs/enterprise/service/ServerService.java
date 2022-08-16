@@ -96,7 +96,7 @@ public class ServerService implements IServerService {
             }
 
             // Update proxy config to route traffic to the server
-            if(!reverseProxyUtil.addHostEntry(server)) {
+            if(!reverseProxyUtil.addHostEntry(server.getName(), server.getVmid())) {
                 throw new ServerCreationException(server);
             }
             status = Server.CreationStatus.HAS_PROXY_CFG;
@@ -122,20 +122,20 @@ public class ServerService implements IServerService {
             e.printStackTrace();
 
             server.setCreationStatus(status);
-            rollbackServerCreation(server);
+            rollbackServer(server);
         }
 
         return status;
     }
 
-    private void rollbackServerCreation(Server server) {
+    private void rollbackServer(Server server) {
         Server.CreationStatus status = server.getCreationStatus();
 
         try {
             switch (status) {
                 case COMPLETED:
                 case HAS_PROXY_CFG:
-                    if (reverseProxyUtil.deleteHostEntry(server)) {
+                    if (reverseProxyUtil.deleteHostEntry(server.getName())) {
                         server.setCreationStatus(Server.CreationStatus.HAS_VM);
                     } else {
                         break;
@@ -194,27 +194,35 @@ public class ServerService implements IServerService {
      */
     @Override
     public boolean renameServer(String username, int vmid, String serverName) {
-        // Confirm that the server name can be used
-        if(!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
-            return false;
-        }
-
-        // Confirm server is assigned to user
+        // Confirm that the server is assigned to user && the new server name can be used
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
-        if(!server.isFound()){
+        if(!server.isFound() || !serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
             return false;
         }
 
-        // Remove previous reverse proxy host config entry
-        reverseProxyUtil.deleteHostEntry(server);
+        // Update database record, proxy configuration, and dns record
+        if (reverseProxyUtil.deleteHostEntry(server.getName())) {
+            String originalName = server.getName();
+            server.setName(serverName);
+            if (assignedServerDAO.update(server)) {
+                boolean addedProxyEntry = reverseProxyUtil.addHostEntry(serverName, server.getVmid());
+                boolean updatedDnsRecord = domainUtil.renameDnsRecord(serverName, server.getDnsId());
 
-        // Set new server name
-        server.setName(serverName);
+                if (!addedProxyEntry) {
+                    logger.error("Failed to add proxy entry for " + server.toString());
+                }
 
-        // Update database record, update proxy configuration, & update dns record
-        if (assignedServerDAO.update(server) && domainUtil.renameDnsRecord(serverName, server.getDnsId()))
-        {
-            return reverseProxyUtil.addHostEntry(server);
+                if (!updatedDnsRecord) {
+                    logger.error("Failed to update dns record for " + server.toString());
+                }
+
+                return addedProxyEntry && updatedDnsRecord;
+
+            } else {
+                if (!reverseProxyUtil.addHostEntry(originalName, server.getVmid())) {
+                    logger.error(server.toString() + " is missing a reverse proxy host entry.");
+                }
+            }
         }
 
         return false;
@@ -248,12 +256,8 @@ public class ServerService implements IServerService {
     public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws IOException {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()){
-            if(proxmoxUtil.isVmRunning(vmid)){
-                return clientServerUtil.deployBuild(server.getIpAddress(), buildFile);
-            } else {
-                return false;
-            }
+        if (server.isFound() && proxmoxUtil.isVmRunning(vmid)) {
+            return clientServerUtil.deployBuild(server.getIpAddress(), buildFile);
         }
 
         return false;
@@ -291,7 +295,7 @@ public class ServerService implements IServerService {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
         if (server.isFound() && !proxmoxUtil.isVmRunning(vmid)) {
-            rollbackServerCreation(server);
+            rollbackServer(server);
             return !server.isFound();
         }
 
@@ -302,8 +306,8 @@ public class ServerService implements IServerService {
     public String getVmStatus(String username, int vmid) {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()){
-            if(proxmoxUtil.isVmLocked(vmid)){
+        if (server.isFound()) {
+            if (proxmoxUtil.isVmLocked(vmid)) {
                 return "locked";
             } else {
                 return proxmoxUtil.getVmStatus(vmid);
@@ -317,16 +321,16 @@ public class ServerService implements IServerService {
     public JSONObject getVmData(String username, int vmid, ProxmoxUtil.TimeFrame timeFrame) {
         Server server = assignedServerDAO.fetchUserServer(username, vmid);
 
-        if(server.isFound()){
+        if (server.isFound()) {
             return proxmoxUtil.getVmData(vmid, timeFrame);
         }
 
         return new JSONObject();
     }
 
-    public class ServerCreationException extends Exception {
+    private class ServerCreationException extends Exception {
         public ServerCreationException(Server server) {
-            super("Error occurred during the creation of server " + server.getName() + "(" + server.getVmid() + ")");
+            super("Error occurred during the creation of " + server.toString());
         }
     }
 }

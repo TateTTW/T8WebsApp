@@ -3,7 +3,7 @@ package com.t8webs.enterprise.utils;
 import com.t8webs.enterprise.dto.Server;
 
 public interface IReverseProxyUtil {
-    boolean addHostEntry(Server server);
+    boolean addHostEntry(String serverName, int vmid);
 
-    boolean deleteHostEntry(Server server);
+    boolean deleteHostEntry(String serverName);
 }
