@@ -18,7 +18,7 @@
   <table>
     <tr>
       <td><button ejs-button (click)="close()">Cancel</button></td>
-      <td><button ejs-button (click)="confirm()" isPrimary="true">Submit</button></td>
+      <td><button ejs-button (click)="confirm()" isPrimary="true" [disabled]="validName">Submit</button></td>
     </tr>
   </table>
   <div id="spinnerDiv"></div>

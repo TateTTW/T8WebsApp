@@ -43,9 +43,13 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   get serverName(): AbstractControl | null {
     return this.formGroup.get("serverName");
   }
-  private _errors: ValidationErrors = this.serverName?.errors ?? {};
+
   get errors(): ValidationErrors {
     return this.serverName?.errors ?? {};
+  }
+
+  get validName(): boolean {
+    return Object.values(this.errors).length > 0;
   }
 
   constructor(private dashboardService: DashboardService) { }
