@@ -3,9 +3,13 @@ package com.t8webs.enterprise.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.t8webs.enterprise.dao.IAssignedServerDAO;
+import com.t8webs.enterprise.dao.AssignedServer.IAssignedServerDAO;
 import com.t8webs.enterprise.dto.Server;
-import com.t8webs.enterprise.utils.*;
+import com.t8webs.enterprise.utils.DnsUtil.IDnsUtil;
+import com.t8webs.enterprise.utils.ProxmoxUtil.IProxmoxUtil;
+import com.t8webs.enterprise.utils.ProxmoxUtil.ProxmoxUtil;
+import com.t8webs.enterprise.utils.ReverseProxyUtil.IReverseProxyUtil;
+import com.t8webs.enterprise.utils.UserServerUtil.IUserServerUtil;
 import kong.unirest.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +25,7 @@ import java.util.regex.Pattern;
 @Service
 public class ServerService implements IServerService {
     @Autowired
-    IDomainUtil domainUtil;
+    IDnsUtil domainUtil;
     @Autowired
     IAssignedServerDAO assignedServerDAO;
     @Autowired
@@ -29,31 +33,31 @@ public class ServerService implements IServerService {
     @Autowired
     IReverseProxyUtil reverseProxyUtil;
     @Autowired
-    IClientServerUtil clientServerUtil;
+    IUserServerUtil userServerUtil;
 
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * @param username    String user to assign a server to
+     * @param userId    String userId to assign a server to
      * @param serverName  String name to give server
      * @return
      */
     @Override
-    public Server.CreationStatus addServer(String username, String serverName) {
+    public Server.CreationStatus addServer(String userId, String serverName) {
         Server.CreationStatus status = Server.CreationStatus.BEGIN;
         Server server = new Server();
 
         try {
             // Confirm that the server name can be used
-            if (!serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName)) {
+            if (!serverNameConforms(serverName) || assignedServerDAO.nameExists(serverName)) {
                 throw new ServerCreationException(server);
             }
             status = Server.CreationStatus.VERIFIED_NAME;
 
             // Assign an available server to the user
-            server = clientServerUtil.assignUserServer(username, serverName);
+            server = userServerUtil.assignUserServer(userId, serverName);
             if (!server.isFound()) {
                 throw new ServerCreationException(server);
             }
@@ -91,7 +95,7 @@ public class ServerService implements IServerService {
             }
 
             // Set the vm's ip to a static ip defined in the server database entry
-            if (!clientServerUtil.updateServerIp(dhcpIp, server.getIpAddress())) {
+            if (!userServerUtil.updateServerIp(dhcpIp, server.getIpAddress())) {
                 throw new ServerCreationException(server);
             }
 
@@ -160,7 +164,7 @@ public class ServerService implements IServerService {
                         break;
                     }
                 case ASSIGNED:
-                    if (clientServerUtil.unassignUserServer(server)) {
+                    if (userServerUtil.unassignUserServer(server)) {
                         server.setCreationStatus(Server.CreationStatus.VERIFIED_NAME);
                         server.setFound(false);
                     }
@@ -187,16 +191,16 @@ public class ServerService implements IServerService {
     }
 
     /**
-     * @param username    String user assigned to server
+     * @param userId      String user assigned to server
      * @param vmid        int uniquely identifying the server
      * @param serverName  String to rename the server
      * @return
      */
     @Override
-    public boolean renameServer(String username, int vmid, String serverName) {
+    public boolean renameServer(String userId, int vmid, String serverName) {
         // Confirm that the server is assigned to user && the new server name can be used
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
-        if(!server.isFound() || !serverNameConforms(serverName) || assignedServerDAO.existsBy(serverName.trim())){
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
+        if(!server.isFound() || !serverNameConforms(serverName) || assignedServerDAO.nameExists(serverName.trim())){
             return false;
         }
 
@@ -229,12 +233,12 @@ public class ServerService implements IServerService {
     }
 
     /**
-     * @param username    String uniquely identifying user
+     * @param userId    String uniquely identifying user
      * @return
      */
     @Override
-    public ArrayNode getUserServers(String username) {
-        List<Server> servers = assignedServerDAO.fetchByUsername(username);
+    public ArrayNode getUserServers(String userId) {
+        List<Server> servers = assignedServerDAO.fetchByUserId(userId);
         ArrayNode serverNodes = mapper.createArrayNode();
         for(Server server: servers){
             ObjectNode serverNode = mapper.createObjectNode();
@@ -253,19 +257,19 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deployBuild(String username, int vmid, MultipartFile buildFile) throws IOException {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public boolean deployBuild(String userId, int vmid, MultipartFile buildFile) throws IOException {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         if (server.isFound() && proxmoxUtil.isVmRunning(vmid)) {
-            return clientServerUtil.deployBuild(server.getIpAddress(), buildFile);
+            return userServerUtil.deployBuild(server.getIpAddress(), buildFile);
         }
 
         return false;
     }
 
     @Override
-    public boolean startVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public boolean startVM(String userId, int vmid) throws ProxmoxUtil.InvalidVmStateException {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         return server.isFound()
                 && proxmoxUtil.startVM(vmid)
@@ -273,8 +277,8 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean shutdownVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public boolean shutdownVM(String userId, int vmid) throws ProxmoxUtil.InvalidVmStateException {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         return server.isFound()
                 && proxmoxUtil.shutdownVM(vmid)
@@ -282,8 +286,8 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean rebootVM(String username, int vmid) throws ProxmoxUtil.InvalidVmStateException {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public boolean rebootVM(String userId, int vmid) throws ProxmoxUtil.InvalidVmStateException {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         return server.isFound()
                 && proxmoxUtil.rebootVM(vmid)
@@ -291,8 +295,8 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public boolean deleteVM(String username, int vmid) {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public boolean deleteVM(String userId, int vmid) {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         if (server.isFound() && !proxmoxUtil.isVmRunning(vmid)) {
             rollbackServer(server);
@@ -303,8 +307,8 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public String getVmStatus(String username, int vmid) {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public String getVmStatus(String userId, int vmid) {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         if (server.isFound()) {
             if (proxmoxUtil.isVmLocked(vmid)) {
@@ -318,8 +322,8 @@ public class ServerService implements IServerService {
     }
 
     @Override
-    public JSONObject getVmData(String username, int vmid, ProxmoxUtil.TimeFrame timeFrame) {
-        Server server = assignedServerDAO.fetchUserServer(username, vmid);
+    public JSONObject getVmData(String userId, int vmid, ProxmoxUtil.TimeFrame timeFrame) {
+        Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         if (server.isFound()) {
             return proxmoxUtil.getVmData(vmid, timeFrame);

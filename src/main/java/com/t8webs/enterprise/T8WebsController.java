@@ -3,9 +3,12 @@ package com.t8webs.enterprise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.t8webs.enterprise.dao.DbQuery;
+import com.t8webs.enterprise.dao.User.IUserDAO;
 import com.t8webs.enterprise.dto.Server;
+import com.t8webs.enterprise.dto.User;
 import com.t8webs.enterprise.service.IServerService;
-import com.t8webs.enterprise.utils.ProxmoxUtil;
+import com.t8webs.enterprise.utils.ProxmoxUtil.ProxmoxUtil;
 import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -18,12 +21,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 public class T8WebsController {
 
     @Autowired
     IServerService serverService;
+    @Autowired
+    IUserDAO userDAO;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -32,11 +38,109 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ObjectNode jsonNode = mapper.createObjectNode();
-        jsonNode.put("name", (String) user.getAttribute("given_name"));
-        jsonNode.put("picture", (String) user.getAttribute("picture"));
+        try {
+            String userId = user.getAttribute("sub");
+            String name = user.getAttribute("given_name");
+            String email = user.getAttribute("email");
+            String picture = user.getAttribute("picture");
 
-        return new ResponseEntity(jsonNode, headers, HttpStatus.OK);
+            User appUser = userDAO.getUserById(userId);
+
+            if (!appUser.isFound()) {
+                appUser = new User();
+                appUser.setUserId(userId);
+                appUser.setName(name);
+                appUser.setEmail(email);
+                userDAO.save(appUser);
+            } else if (!(appUser.getName().equals(name) && appUser.getEmail().equals(email))) {
+                appUser.setName(name);
+                appUser.setEmail(email);
+                userDAO.update(appUser);
+            }
+
+            ObjectNode jsonNode = mapper.createObjectNode();
+            jsonNode.put("status", appUser.getStatus().name());
+            jsonNode.put("name", name);
+            jsonNode.put("picture", picture);
+
+            return new ResponseEntity(jsonNode, headers, HttpStatus.OK);
+
+        } catch (DbQuery.IntegrityConstraintViolationException e) {
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping(value="/requestAccess", produces="application/json")
+    public ResponseEntity requestAccess(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        User appUser = userDAO.getUserById(user.getAttribute("sub"));
+
+        if (appUser.getStatus() != User.Status.NONE) {
+            return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
+        }
+
+        if (userDAO.requestAccess(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.OK);
+        }
+
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping(value="/grantAccess", produces="application/json")
+    public ResponseEntity grantAccess(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="userId") String userId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        if (userDAO.isApproved(userId)) {
+            return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
+        }
+
+        if (userDAO.grantAccess(userId)) {
+            return new ResponseEntity(headers, HttpStatus.OK);
+        }
+
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping(value="/revokeAccess", produces="application/json")
+    public ResponseEntity revokeAccess(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="userId") String userId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        if (!userDAO.isApproved(userId)) {
+            return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
+        }
+
+        if (userDAO.revokeAccess(userId)) {
+            return new ResponseEntity(headers, HttpStatus.OK);
+        }
+
+        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping(value="/allUsers", produces="application/json")
+    public ResponseEntity getAllUsers(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        List<User> users = userDAO.getAllUsers();
+        return new ResponseEntity(users, headers, HttpStatus.OK);
     }
 
     @PostMapping(value="/addServer", produces="application/json")
@@ -44,8 +148,12 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
         try {
-            Server.CreationStatus status = serverService.addServer(user.getAttribute("email"), serverName.trim());
+            Server.CreationStatus status = serverService.addServer(user.getAttribute("sub"), serverName.trim());
             if (status == Server.CreationStatus.COMPLETED) {
                 return new ResponseEntity(headers, HttpStatus.OK);
             } else if (status == Server.CreationStatus.BEGIN) {
@@ -65,7 +173,11 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        if (serverService.deleteVM(user.getAttribute("email"), vmid)) {
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        if (serverService.deleteVM(user.getAttribute("sub"), vmid)) {
             return new ResponseEntity(headers, HttpStatus.OK);
         }
 
@@ -77,7 +189,11 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        if(serverService.renameServer(user.getAttribute("email"), vmid, serverName)){
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        if (serverService.renameServer(user.getAttribute("sub"), vmid, serverName)) {
             return new ResponseEntity(headers, HttpStatus.OK);
         }
 
@@ -89,8 +205,12 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
         try {
-            if(serverService.deployBuild(user.getAttribute("email"), vmid, buildFile)){
+            if (serverService.deployBuild(user.getAttribute("sub"), vmid, buildFile)) {
                 return new ResponseEntity(headers, HttpStatus.OK);
             }
         } catch (IOException e) {
@@ -118,7 +238,7 @@ public class T8WebsController {
             serversNode.put("expanded", true);
             serversNode.put("hasAttributes", attribute);
 
-            ArrayNode serversArray = serverService.getUserServers(user.getAttribute("email"));
+            ArrayNode serversArray = serverService.getUserServers(user.getAttribute("sub"));
             serversNode.put("subChild", serversArray);
             results.add(serversNode);
 
@@ -135,8 +255,12 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
         try {
-            if(serverService.startVM(user.getAttribute("email"), vmid)){
+            if (serverService.startVM(user.getAttribute("sub"), vmid)) {
                 ObjectNode responseNode = mapper.createObjectNode();
                 responseNode.put("status", "running");
 
@@ -154,8 +278,12 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
         try {
-            if(serverService.shutdownVM(user.getAttribute("email"), vmid)){
+            if (serverService.shutdownVM(user.getAttribute("sub"), vmid)) {
                 ObjectNode responseNode = mapper.createObjectNode();
                 responseNode.put("status", "stopped");
 
@@ -173,8 +301,12 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        if (!userDAO.isApproved(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
         try {
-            if(serverService.rebootVM(user.getAttribute("email"), vmid)){
+            if (serverService.rebootVM(user.getAttribute("sub"), vmid)) {
                 ObjectNode responseNode = mapper.createObjectNode();
                 responseNode.put("status", "running");
 
@@ -193,7 +325,7 @@ public class T8WebsController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         ObjectNode responseNode = mapper.createObjectNode();
-        responseNode.put("status", serverService.getVmStatus(user.getAttribute("email"), vmid));
+        responseNode.put("status", serverService.getVmStatus(user.getAttribute("sub"), vmid));
         return new ResponseEntity(responseNode, headers, HttpStatus.OK);
     }
 
@@ -202,7 +334,7 @@ public class T8WebsController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        JSONObject jsonObject = serverService.getVmData(user.getAttribute("email"), vmid, ProxmoxUtil.TimeFrame.HOUR);
+        JSONObject jsonObject = serverService.getVmData(user.getAttribute("sub"), vmid, ProxmoxUtil.TimeFrame.HOUR);
         ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
 
         return new ResponseEntity(objectNode, headers, HttpStatus.OK);

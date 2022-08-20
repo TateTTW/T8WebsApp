@@ -8,8 +8,8 @@ public class Server {
      * Server's unique identifier
      */
     private int vmid;
+    private String userId;
     private String name = "";
-    private String username = "";
     private String ipAddress = "";
     private String dnsId = "";
     private CreationStatus creationStatus = CreationStatus.NONE;

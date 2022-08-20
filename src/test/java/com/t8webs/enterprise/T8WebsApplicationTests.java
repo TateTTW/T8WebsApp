@@ -1,10 +1,12 @@
 package com.t8webs.enterprise;
 
 import com.t8webs.enterprise.dao.DbQuery;
-import com.t8webs.enterprise.dao.IAvailableServerDAO;
+import com.t8webs.enterprise.dao.AvailableServer.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.service.IServerService;
-import com.t8webs.enterprise.utils.*;
+import com.t8webs.enterprise.utils.DnsUtil.IDnsUtil;
+import com.t8webs.enterprise.utils.ProxmoxUtil.IProxmoxUtil;
+import com.t8webs.enterprise.utils.UserServerUtil.IUserServerUtil;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +26,9 @@ class T8WebsApplicationTests {
     @Autowired
     IProxmoxUtil proxmoxUtil;
     @Autowired
-    IDomainUtil domainUtil;
+    IDnsUtil domainUtil;
     @Autowired
-    IClientServerUtil clientServerUtil;
+    IUserServerUtil clientServerUtil;
 
     @Test
     void contextLoads() {
@@ -44,7 +46,7 @@ class T8WebsApplicationTests {
         ArrayList<Server> assignedServers = new ArrayList<>();
         try {
             for (int i=1; i<11; i++) {
-                Server server = clientServerUtil.assignUserServer("user1", "server"+i);
+                Server server = clientServerUtil.assignUserServer("100201287479296569425", "server"+i);
                 if (server.isFound()) {
                     assignedServers.add(server);
                 }
@@ -53,7 +55,7 @@ class T8WebsApplicationTests {
             e.printStackTrace();
         }
 
-        Server.CreationStatus serverStatus = serverService.addServer("user1", "uat08");
+        Server.CreationStatus serverStatus = serverService.addServer("100201287479296569425", "uat08");
 
         for (Server assignedServer: assignedServers) {
             clientServerUtil.unassignUserServer(assignedServer);
