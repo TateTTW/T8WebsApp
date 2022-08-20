@@ -1,5 +1,6 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AssignedServer;
 
+import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -21,9 +22,9 @@ public class AssignedServerDAO implements IAssignedServerDAO {
     @Override
     public boolean save(Server server) throws DbQuery.IntegrityConstraintViolationException {
         DbQuery query = newQuery();
-        query.setColumnValue("name", server.getName());
-        query.setColumnValue("username", server.getUsername());
         query.setColumnValue("vmid", server.getVmid());
+        query.setColumnValue("userId", server.getUserId());
+        query.setColumnValue("name", server.getName());
         query.setColumnValue("ipAddress", server.getIpAddress());
         query.setColumnValue("dnsId", server.getDnsId());
         query.setColumnValue("creationStatus", server.getCreationStatus().name());
@@ -38,7 +39,7 @@ public class AssignedServerDAO implements IAssignedServerDAO {
      * @return boolean indicating whether a record exists for this server
      */
     @Override
-    public boolean existsBy(String name) {
+    public boolean nameExists(String name) {
         DbQuery query = newQuery();
         query.addWhere("name", name);
         return !query.select().isEmpty();
@@ -57,26 +58,26 @@ public class AssignedServerDAO implements IAssignedServerDAO {
     /**
      * Method for fetching all servers assigned to a user
      *
-     * @param username String uniquely identifying a user
+     * @param userId String uniquely identifying a user
      * @return List of Servers assigned to the given user
      */
     @Override
-    public List<Server> fetchByUsername(String username) {
+    public List<Server> fetchByUserId(String userId) {
         DbQuery query = newQuery();
-        query.addWhere("username", username);
+        query.addWhere("userId", userId);
         return parse(query.select());
     }
 
     /**
-     * @param username String uniquely identifying a User
+     * @param userId String uniquely identifying a User
      * @param vmid     String uniquely identifying a server record
      * @return server record assigned to the user
      */
     @Override
-    public Server fetchUserServer(String username, int vmid) {
+    public Server fetchUserServer(String userId, int vmid) {
         DbQuery query = newQuery();
         query.addWhere("vmid", vmid);
-        query.addWhere("username", username);
+        query.addWhere("userId", userId);
         List<Server> servers = parse(query.select());
 
         if(servers.isEmpty()){
@@ -120,9 +121,9 @@ public class AssignedServerDAO implements IAssignedServerDAO {
      * @return DbQuery object for querying database
      */
     private DbQuery newQuery() {
-        DbQuery dao = new DbQuery();
-        dao.setTableName("AssignedServer");
-        return dao;
+        DbQuery query = new DbQuery();
+        query.setTableName("AssignedServer");
+        return query;
     }
 
     /**
@@ -135,11 +136,11 @@ public class AssignedServerDAO implements IAssignedServerDAO {
         ArrayList<Server> servers = new ArrayList<>();
         for (HashMap valuesMap: results) {
             Server server = new Server();
+            server.setVmid((Integer) valuesMap.get("vmid"));
+            server.setUserId((String) valuesMap.get("userId"));
             server.setName((String) valuesMap.get("name"));
-            server.setUsername((String) valuesMap.get("username"));
             server.setIpAddress((String) valuesMap.get("ipAddress"));
             server.setDnsId((String) valuesMap.get("dnsId"));
-            server.setVmid((Integer) valuesMap.get("vmid"));
             server.setCreationStatus((String) valuesMap.get("creationStatus"));
             server.setFound(true);
             servers.add(server);

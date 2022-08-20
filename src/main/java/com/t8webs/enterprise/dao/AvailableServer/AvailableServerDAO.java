@@ -1,5 +1,6 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AvailableServer;
 
+import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -65,9 +66,9 @@ public class AvailableServerDAO implements IAvailableServerDAO {
      * @return DbQuery object for querying database
      */
     private DbQuery newQuery() {
-        DbQuery dao = new DbQuery();
-        dao.setTableName("AvailableServer");
-        return dao;
+        DbQuery query = new DbQuery();
+        query.setTableName("AvailableServer");
+        return query;
     }
 
     /**
@@ -81,7 +82,7 @@ public class AvailableServerDAO implements IAvailableServerDAO {
         for (HashMap valuesMap: results) {
             Server server = new Server();
             server.setName("");
-            server.setUsername("");
+            server.setUserId("");
             server.setIpAddress((String) valuesMap.get("ipAddress"));
             server.setVmid((Integer) valuesMap.get("vmid"));
             server.setFound(true);

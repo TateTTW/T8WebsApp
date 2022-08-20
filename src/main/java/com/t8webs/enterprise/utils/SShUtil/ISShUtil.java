@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.SShUtil;
 
 public interface ISShUtil {
 

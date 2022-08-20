@@ -1,5 +1,6 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AssignedServer;
 
+import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dto.Server;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public interface IAssignedServerDAO {
      * @param name String uniquely identifying a server by name
      * @return boolean indicating whether a record exists for this server
      */
-    boolean existsBy(String name);
+    boolean nameExists(String name);
 
     /**
      * Method for fetching all assigned servers
@@ -31,17 +32,17 @@ public interface IAssignedServerDAO {
     /**
      * Method for fetching servers assigned to a user
      *
-     * @param username String uniquely identifying a User
+     * @param userId String uniquely identifying a User
      * @return List of Servers assigned to the given user
      */
-    List<Server> fetchByUsername(String username);
+    List<Server> fetchByUserId(String userId);
 
     /**
-     * @param username String uniquely identifying a User
+     * @param userId String uniquely identifying a User
      * @param vmid String uniquely identifying a server record
      * @return server record assigned to the user
      */
-    Server fetchUserServer(String username, int vmid);
+    Server fetchUserServer(String userId, int vmid);
 
     /**
      * Method for deleting a Server when it has been unassigned

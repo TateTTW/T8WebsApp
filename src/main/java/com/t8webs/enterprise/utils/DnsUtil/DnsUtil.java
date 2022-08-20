@@ -1,13 +1,11 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.DnsUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.T8WebsApplication;
-import com.t8webs.enterprise.dao.IAssignedServerDAO;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +15,7 @@ import java.util.Properties;
 
 @Component
 @Profile("dev")
-public class DomainUtil implements IDomainUtil {
-
-    @Autowired
-    IAssignedServerDAO assignedServerDAO;
+public class DnsUtil implements IDnsUtil {
 
     private static final Properties PROPERTIES;
     static {
@@ -75,7 +70,7 @@ public class DomainUtil implements IDomainUtil {
         ObjectMapper mapper = new ObjectMapper();
 
         ObjectNode jsonNode = mapper.createObjectNode();
-        jsonNode.put("content", DomainUtil.DOMAIN_NAME);
+        jsonNode.put("content", DnsUtil.DOMAIN_NAME);
         jsonNode.put("name", domainName.trim());
         jsonNode.put("type", "CNAME");
         jsonNode.put("ttl", 1);

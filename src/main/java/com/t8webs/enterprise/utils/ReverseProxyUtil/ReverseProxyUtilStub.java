@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.ReverseProxyUtil;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

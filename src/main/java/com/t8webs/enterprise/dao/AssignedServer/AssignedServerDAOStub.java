@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AssignedServer;
 
 import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
@@ -23,7 +23,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
             Server server = new Server();
             server.setVmid(i);
             server.setIpAddress("192.168.90."+i);
-            server.setUsername("test@domain.com");
+            server.setUserId("100201287479296569425");
             server.setName("T8Server"+i);
             server.setCreationStatus(Server.CreationStatus.COMPLETED);
             server.setFound(true);
@@ -57,7 +57,7 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return boolean indicating whether a record exists for this server
      */
     @Override
-    public boolean existsBy(String name) {
+    public boolean nameExists(String name) {
         for(Server server: servers.values()){
             if(server.getName().equals(name)){
                 return true;
@@ -80,14 +80,14 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
     /**
      * Method for fetching servers assigned to a user
      *
-     * @param username String uniquely identifying a User
+     * @param userId String uniquely identifying a User
      * @return List of Servers assigned to the given user
      */
     @Override
-    public List<Server> fetchByUsername(String username) {
+    public List<Server> fetchByUserId(String userId) {
         List<Server> userServers = new ArrayList<Server>();
         for(Server server: servers.values()){
-            if(server.getUsername().equals(username)){
+            if(server.getUserId().equals(userId)){
                 userServers.add(server);
             }
         }
@@ -96,14 +96,14 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
     }
 
     /**
-     * @param username String uniquely identifying a User
+     * @param userId String uniquely identifying a User
      * @param vmid     String uniquely identifying a server record
      * @return server record assigned to the user
      */
     @Override
-    public Server fetchUserServer(String username, int vmid) {
+    public Server fetchUserServer(String userId, int vmid) {
         for(Server server: servers.values()){
-            if(server.getVmid() == vmid && server.getUsername().equals(username)){
+            if(server.getVmid() == vmid && server.getUserId().equals(userId)){
                 return server;
             }
         }

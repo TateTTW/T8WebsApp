@@ -1,10 +1,11 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.UserServerUtil;
 
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dao.DbQuery;
-import com.t8webs.enterprise.dao.IAssignedServerDAO;
-import com.t8webs.enterprise.dao.IAvailableServerDAO;
+import com.t8webs.enterprise.dao.AssignedServer.IAssignedServerDAO;
+import com.t8webs.enterprise.dao.AvailableServer.IAvailableServerDAO;
 import com.t8webs.enterprise.dto.Server;
+import com.t8webs.enterprise.utils.SShUtil.ISShUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -15,7 +16,7 @@ import java.io.*;
 import java.util.Properties;
 
 @Component
-public class ClientServerUtil implements IClientServerUtil {
+public class UserServerUtil implements IUserServerUtil {
 
     @Autowired
     ISShUtil sshUtil;
@@ -46,14 +47,14 @@ public class ClientServerUtil implements IClientServerUtil {
 
     @Override
     @Retryable(maxAttempts=20, value= DbQuery.IntegrityConstraintViolationException.class, backoff=@Backoff(delay = 100))
-    public Server assignUserServer(String username, String serverName) throws DbQuery.IntegrityConstraintViolationException {
+    public Server assignUserServer(String userId, String serverName) throws DbQuery.IntegrityConstraintViolationException {
         Server server = availableServerDAO.fetchAvailable();
 
         if(!server.isFound()){
             return server;
         }
 
-        server.setUsername(username);
+        server.setUserId(userId);
         server.setName(serverName);
 
         // throws DbQuery.IntegrityConstraintViolationException when another user is assigned server first

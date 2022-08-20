@@ -1,6 +1,6 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.DnsUtil;
 
-public interface IDomainUtil {
+public interface IDnsUtil {
 
     boolean deleteDnsRecord(String domainId);
 

@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AvailableServer;
 
 import com.t8webs.enterprise.dto.Server;
 import org.springframework.context.annotation.Profile;
@@ -35,7 +35,7 @@ public class AvailableServerDAOStub implements IAvailableServerDAO {
         }
 
         server.setFound(true);
-        server.setUsername("");
+        server.setUserId("");
         server.setName("");
 
         servers.put(server.getVmid(), server);

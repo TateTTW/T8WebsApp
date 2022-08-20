@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.UserServerUtil;
 
 import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dto.Server;
@@ -6,9 +6,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
-public interface IClientServerUtil {
+public interface IUserServerUtil {
 
-    Server assignUserServer(String username, String serverName) throws DbQuery.IntegrityConstraintViolationException;
+    Server assignUserServer(String userId, String serverName) throws DbQuery.IntegrityConstraintViolationException;
 
     boolean unassignUserServer(Server server);
 

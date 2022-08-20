@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.SShUtil;
 
 import com.jcraft.jsch.*;
 import org.springframework.context.annotation.Profile;

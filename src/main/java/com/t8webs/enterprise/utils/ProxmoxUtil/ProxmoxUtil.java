@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.utils;
+package com.t8webs.enterprise.utils.ProxmoxUtil;
 
 import com.t8webs.enterprise.T8WebsApplication;
 import kong.unirest.HttpResponse;

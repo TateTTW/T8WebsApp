@@ -1,4 +1,4 @@
-package com.t8webs.enterprise.dao;
+package com.t8webs.enterprise.dao.AvailableServer;
 
 import com.t8webs.enterprise.dto.Server;
 

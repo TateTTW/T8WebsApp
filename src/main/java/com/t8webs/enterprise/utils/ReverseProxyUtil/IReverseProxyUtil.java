@@ -1,6 +1,4 @@
-package com.t8webs.enterprise.utils;
-
-import com.t8webs.enterprise.dto.Server;
+package com.t8webs.enterprise.utils.ReverseProxyUtil;
 
 public interface IReverseProxyUtil {
     boolean addHostEntry(String serverName, int vmid);
