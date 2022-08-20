@@ -34,7 +34,7 @@ public class DbQuery {
      * @param value String value required in the column
      */
     public void addWhere(String column, String value) {
-        if (column == null || value == null) {
+        if (column == null) {
             return;
         }
 
@@ -46,7 +46,7 @@ public class DbQuery {
 
         this.whereCondition.append(column);
 
-        if (value.equalsIgnoreCase("NULL")) {
+        if (value == null || value.equalsIgnoreCase("NULL")) {
             this.whereCondition.append(" IS NULL");
         } else {
             this.whereCondition.append(" = '").append(value).append("'");
@@ -71,6 +71,44 @@ public class DbQuery {
         }
 
         this.whereCondition.append(column).append(" = ").append(value);
+    }
+
+    /**
+     * This is a method for setting constraints on sql statements
+     *
+     * @param column column name
+     * @param values array of Strings
+     */
+    public void addOrWhere(String column, String[] values) {
+        if (column == null || values.length < 1) {
+            return;
+        }
+
+        if (this.whereCondition.isEmpty()) {
+            this.whereCondition.append(" WHERE ");
+        } else {
+            this.whereCondition.append(" AND ");
+        }
+
+        this.whereCondition.append("(");
+
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
+
+            this.whereCondition.append(column);
+
+            if (value == null || value.equalsIgnoreCase("NULL")) {
+                this.whereCondition.append(" IS NULL");
+            } else {
+                this.whereCondition.append(" = '").append(value).append("'");
+            }
+
+            if (i < values.length - 1) {
+                this.whereCondition.append(" OR ");
+            }
+        }
+
+        this.whereCondition.append(")");
     }
 
     /**
