@@ -28,7 +28,7 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
   //@ViewChild('title') title?: HTMLElement;
 
   @Input() user: User | undefined;
-  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.NONE);
   @Output() doJob: EventEmitter<Job> = new EventEmitter<Job>();
 
   runningItems = ['Stop','Reboot'];
@@ -65,12 +65,12 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
     if(this.toolbar && selectedTreeNode && selectedTreeNode.currentValue) {
       const status = selectedTreeNode.currentValue.status;
       const nodeType = selectedTreeNode.currentValue.type;
-      const isGroup = nodeType === NodeType.ServerGroup || nodeType === NodeType.BalancerGroup;
+      const isGroup = nodeType === NodeType.SERVER_GROUP || nodeType === NodeType.BALANCER_GROUP;
       const validItemsArr = status == 'running' ? this.runningItems : status == 'stopped' ? this.stoppedItems : [];
 
       let index = 0;
       this.toolbar?.items.forEach((item: ItemModel) => {
-        if(nodeType == NodeType.None && item.cssClass !== 'persist'){
+        if([NodeType.NONE, NodeType.ADMIN_GROUP, NodeType.ADMIN_USERS, NodeType.ADMIN_SERVERS].includes(nodeType) && item.cssClass !== 'persist'){
           this.toolbar?.hideItem(index, true);
         }
         else if(item.cssClass === 'group')
@@ -110,7 +110,7 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
     }
 
     this.doJob.emit({
-      type: (this.selectedTreeNode.type == NodeType.ServerGroup || this.selectedTreeNode.type == NodeType.Server) ? JobType.Server : JobType.LoadBalancer,
+      type: (this.selectedTreeNode.type == NodeType.SERVER_GROUP || this.selectedTreeNode.type == NodeType.SERVER) ? JobType.Server : JobType.LoadBalancer,
       action: Job.findJobAction(args.item.text),
       vmid: this.selectedTreeNode.id
     });
@@ -119,7 +119,7 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
 
   editSelect(args: ClickEventArgs) {
     this.doJob.emit({
-      type: (this.selectedTreeNode.type == NodeType.ServerGroup || this.selectedTreeNode.type == NodeType.Server) ? JobType.Server : JobType.LoadBalancer,
+      type: (this.selectedTreeNode.type == NodeType.SERVER_GROUP || this.selectedTreeNode.type == NodeType.SERVER) ? JobType.Server : JobType.LoadBalancer,
       action: Job.findJobAction(args.item.text),
       vmid: this.selectedTreeNode.id
     });

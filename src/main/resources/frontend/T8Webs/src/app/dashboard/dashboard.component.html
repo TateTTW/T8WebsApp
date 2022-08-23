@@ -6,11 +6,20 @@
     </div>
     <div fxFlex="85" fxFlex.lt-sm="70">
       <dashboard-toolbar [user]="user" [selectedTreeNode]="selectedTreeNode" (doJob)="doJob($event)"></dashboard-toolbar>
-      <div *ngIf="this.selectedTreeNode.type.id == 1">
-        <server-content [selectedTreeNode]="selectedTreeNode" (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-content>
-      </div>
-      <div *ngIf="this.selectedTreeNode.type.id != 1">
+      <div *ngIf="this.selectedTreeNode.type == NodeType.NONE || this.selectedTreeNode.type == NodeType.SERVER_GROUP || this.selectedTreeNode.type == NodeType.ADMIN_GROUP">
         <homepage [inDashboard]="true" (retrievedUser)="setUser($event)"></homepage>
+      </div>
+<!--      <div *ngIf="this.selectedTreeNode.type == NodeType.ADMIN_GROUP">-->
+<!--        <admin-content></admin-content>-->
+<!--      </div>-->
+      <div *ngIf="this.selectedTreeNode.type == NodeType.ADMIN_USERS">
+        <admin-users></admin-users>
+      </div>
+      <div *ngIf="this.selectedTreeNode.type == NodeType.ADMIN_SERVERS">
+        <admin-servers (refreshTree)="dashboardTree.refresh()"></admin-servers>
+      </div>
+      <div *ngIf="this.selectedTreeNode.type == NodeType.SERVER">
+        <server-content [selectedTreeNode]="selectedTreeNode" (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-content>
       </div>
     </div>
     <server-dialog #serverDialog (refreshTree)="dashboardTree.refresh($event)" (showSpinner)="showSpinner()" (hideSpinner)="hideSpinner()"></server-dialog>

@@ -4,3 +4,10 @@ export interface User {
   picture: string;
   status: string;
 }
+
+export enum UserStatus {
+  NONE = "NONE",
+  REQUESTED = "REQUESTED",
+  APPROVED = "APPROVED",
+  ADMIN = "ADMIN",
+}

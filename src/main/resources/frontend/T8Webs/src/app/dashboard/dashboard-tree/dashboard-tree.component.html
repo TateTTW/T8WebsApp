@@ -4,7 +4,7 @@
       <img id="logo" src="../../assets/T8WEBSICON.png"/>
     </div>
   </div>
-  <ejs-treeview #treeView id="tree" [fields]="treeFields" (nodeClicked)='nodeClicked($event)'></ejs-treeview>
+  <ejs-treeview #treeView id="tree" [fields]="treeFields" (nodeClicked)='nodeClicked($event)' (nodeSelecting)="nodeSelecting($event)"></ejs-treeview>
   <ejs-contextmenu #contextMenu target='#tree' [items]='contextMenuItems' (beforeOpen)='beforeOpen($event)' (select)='contextMenuClick($event)'></ejs-contextmenu>
 </div>
 

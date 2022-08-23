@@ -17,7 +17,7 @@ export class FileUploaderComponent implements OnInit, OnDestroy {
   // Subscriptions
   private deployBuildSub: Subscription | undefined;
 
-  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.NONE);
   @Output() showSpinner: EventEmitter<any> = new EventEmitter<any>();
   @Output() hideSpinner: EventEmitter<any> = new EventEmitter<any>();
 
