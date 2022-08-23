@@ -32,33 +32,15 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     private static final String DOMAIN = PROPERTIES.getProperty("proxmoxIP");
     private static final String TOKEN = PROPERTIES.getProperty("promoxToken");
-    private static final String CLONE_VM_URL = PROPERTIES.getProperty("cloneVmUrl");
-    private static final String DELETE_VM_URL = PROPERTIES.getProperty("deleteVmUrl");
-    private static final String START_VM_URL = PROPERTIES.getProperty("startVmUrl");
-    private static final String SHUTDOWN_VM_URL = PROPERTIES.getProperty("shutdownVmUrl");
-    private static final String REBOOT_VM_URL = PROPERTIES.getProperty("rebootVmUrl");
-    private static final String GET_VM_IP_URL = PROPERTIES.getProperty("getVmIpUrl");
-    private static final String GET_VM_DATA_URL = PROPERTIES.getProperty("getVmDataUrl");
-    private static final String STATUS_VM_URL = PROPERTIES.getProperty("statusVmUrl");
-
-    private static int minVmid = 120;
-
-    public enum State {
-        RUNNING,
-        STOPPED
-    }
-
-    public enum TimeFrame {
-        HOUR
-    }
+    private static final int MIN_VMID = 120;
 
     @Override
     public boolean cloneVM(int vmid, String vmName) {
-        if (vmid < ProxmoxUtil.minVmid) {
+        if (vmid < MIN_VMID) {
             return false;
         }
 
-        String url = MessageFormat.format(ProxmoxUtil.CLONE_VM_URL, ProxmoxUtil.DOMAIN);
+        String url = MessageFormat.format(ApiUrls.CLONE_VM, ProxmoxUtil.DOMAIN);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
                 .header("Authorization", ProxmoxUtil.TOKEN)
@@ -74,11 +56,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public String getVmStatus(int vmid) {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return "";
         }
 
-        String url = MessageFormat.format(STATUS_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.GET_STATUS, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(url)
                 .header("Authorization", TOKEN)
@@ -93,11 +75,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public JSONObject getVmData(int vmid, TimeFrame timeFrame) {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return new JSONObject();
         }
 
-        String url = MessageFormat.format(GET_VM_DATA_URL, DOMAIN, vmid, timeFrame.name().toLowerCase());
+        String url = MessageFormat.format(ApiUrls.GET_VM_DATA, DOMAIN, vmid, timeFrame.name().toLowerCase());
 
         HttpResponse<JsonNode> response = Unirest.get(url)
                 .header("Authorization", TOKEN)
@@ -117,11 +99,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public boolean isVmLocked(int vmid) {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return true;
         }
 
-        String url = MessageFormat.format(STATUS_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.GET_STATUS, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(url)
                 .header("Authorization", TOKEN)
@@ -153,7 +135,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=30, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean startVM(int vmid) throws InvalidVmStateException {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return false;
         }
 
@@ -161,7 +143,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(START_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.START_VM, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
                 .header("Authorization", TOKEN)
@@ -173,7 +155,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean shutdownVM(int vmid) throws InvalidVmStateException {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return false;
         }
 
@@ -181,7 +163,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(SHUTDOWN_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.SHUTDOWN_VM, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
                 .header("Authorization", TOKEN)
@@ -193,7 +175,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean rebootVM(int vmid) throws InvalidVmStateException {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return false;
         }
 
@@ -201,7 +183,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String url = MessageFormat.format(REBOOT_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.REBOOT_VM, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
                 .header("Authorization", TOKEN)
@@ -212,7 +194,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public boolean deleteVM(int vmid) {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return false;
         }
 
@@ -220,7 +202,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return false;
         }
 
-        String url = MessageFormat.format(DELETE_VM_URL, DOMAIN, vmid);
+        String url = MessageFormat.format(ApiUrls.DELETE_VM, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)
                 .header("Authorization", TOKEN)
@@ -232,7 +214,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=18, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public String getServerIp(int vmid) throws InvalidVmStateException {
-        if(vmid < minVmid){
+        if(vmid < MIN_VMID){
             return "";
         }
 
@@ -240,7 +222,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
             throw new InvalidVmStateException(vmid);
         }
 
-        String getVMipURL = MessageFormat.format(GET_VM_IP_URL, DOMAIN, vmid);
+        String getVMipURL = MessageFormat.format(ApiUrls.GET_VM_IP, DOMAIN, vmid);
 
         HttpResponse<JsonNode> response = Unirest.get(getVMipURL)
                 .header("Authorization", TOKEN)
@@ -275,5 +257,25 @@ public class ProxmoxUtil implements IProxmoxUtil {
         public InvalidVmStateException(int vmid) {
             super("VM"+vmid+" is in the wrong state for this request.");
         }
+    }
+
+    private class ApiUrls {
+        public static final String GET_STATUS = "{0}/api2/json/nodes/pve/qemu/{1}/status/current";
+        public static final String DELETE_VM = "{0}/api2/json/nodes/pve/qemu/{1}";
+        public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/111/clone";
+        public static final String START_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/start";
+        public static final String SHUTDOWN_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/shutdown";
+        public static final String REBOOT_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/reboot";
+        public static final String GET_VM_IP = "{0}/api2/json/nodes/pve/qemu/{1}/agent/network-get-interfaces";
+        public static final String GET_VM_DATA= "{0}/api2/json/nodes/pve/qemu/{1}/rrddata?timeframe={2}";
+    }
+
+    public enum State {
+        RUNNING,
+        STOPPED
+    }
+
+    public enum TimeFrame {
+        HOUR
     }
 }

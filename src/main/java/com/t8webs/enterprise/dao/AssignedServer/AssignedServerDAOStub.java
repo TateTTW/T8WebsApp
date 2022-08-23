@@ -78,6 +78,22 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
     }
 
     /**
+     * Method for fetching server by VM Id
+     *
+     * @param vmid int uniquely identifying a Server
+     * @return Server with the given vmid
+     */
+    @Override
+    public Server fetchByVmId(int vmid) {
+        Server server = servers.get(vmid);
+        if (server != null) {
+            return server;
+        }
+
+        return new Server();
+    }
+
+    /**
      * Method for fetching servers assigned to a user
      *
      * @param userId String uniquely identifying a User

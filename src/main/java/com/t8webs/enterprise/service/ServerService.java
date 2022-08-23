@@ -232,6 +232,21 @@ public class ServerService implements IServerService {
         return false;
     }
 
+    @Override
+    public ArrayNode getAllServers() {
+        List<Server> servers = assignedServerDAO.fetchAll();
+        ArrayNode serverNodes = mapper.createArrayNode();
+        for(Server server: servers){
+            ObjectNode serverNode = mapper.valueToTree(server);
+            serverNode.remove("userId");
+            serverNode.remove("ipAddress");
+            serverNode.remove("dnsId");
+            serverNodes.add(serverNode);
+        }
+
+        return serverNodes;
+    }
+
     /**
      * @param userId    String uniquely identifying user
      * @return
@@ -246,7 +261,7 @@ public class ServerService implements IServerService {
             serverNode.put("name", server.getName());
 
             ObjectNode attributes = mapper.createObjectNode();
-            attributes.put("type", 1);
+            attributes.put("type", 5);
             attributes.put("status", "");
             serverNode.put("hasAttributes", attributes);
 
@@ -299,6 +314,25 @@ public class ServerService implements IServerService {
         Server server = assignedServerDAO.fetchUserServer(userId, vmid);
 
         if (server.isFound() && !proxmoxUtil.isVmRunning(vmid)) {
+            rollbackServer(server);
+            return !server.isFound();
+        }
+
+        return false;
+    }
+
+    /**
+     * Method for Admins to force delete a server
+     *
+     * @param vmid int uniquely identifying the server
+     * @return boolean indicating a successful delete
+     */
+    @Override
+    public boolean forceDeleteVM(int vmid) {
+        // ALWAYS CHECK THAT USER IS ADMIN BEFORE CALLING THIS METHOD
+        Server server = assignedServerDAO.fetchByVmId(vmid);
+
+        if (server.isFound()) {
             rollbackServer(server);
             return !server.isFound();
         }

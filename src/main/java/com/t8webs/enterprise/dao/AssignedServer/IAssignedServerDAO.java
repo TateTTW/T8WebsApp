@@ -30,6 +30,14 @@ public interface IAssignedServerDAO {
     List<Server> fetchAll();
 
     /**
+     * Method for fetching server by vmid
+     *
+     * @param vmid int uniquely identifying a Server
+     * @return Server with the given vmid
+     */
+    Server fetchByVmId(int vmid);
+
+    /**
      * Method for fetching servers assigned to a user
      *
      * @param userId String uniquely identifying a User

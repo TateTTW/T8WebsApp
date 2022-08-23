@@ -56,6 +56,25 @@ public class AssignedServerDAO implements IAssignedServerDAO {
     }
 
     /**
+     * Method for fetching server by VM Id
+     *
+     * @param vmid int uniquely identifying a Server
+     * @return Server with the given vmid
+     */
+    @Override
+    public Server fetchByVmId(int vmid) {
+        DbQuery query = newQuery();
+        query.addWhere("vmid", vmid);
+
+        List<Server> servers = parse(query.select());
+        if (servers.isEmpty()) {
+            return new Server();
+        }
+
+        return servers.get(0);
+    }
+
+    /**
      * Method for fetching all servers assigned to a user
      *
      * @param userId String uniquely identifying a user

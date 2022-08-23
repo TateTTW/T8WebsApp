@@ -27,6 +27,8 @@ public interface IServerService {
      */
     boolean renameServer(String userId, int vmid, String serverName);
 
+    ArrayNode getAllServers();
+
     ArrayNode getUserServers(String userId);
 
     boolean deployBuild(String userId, int vmid, MultipartFile buildFile) throws IOException;
@@ -38,6 +40,14 @@ public interface IServerService {
     boolean rebootVM(String userId, int vmid) throws ProxmoxUtil.InvalidVmStateException;
 
     boolean deleteVM(String userId, int vmid);
+
+    /**
+     * Method for Admins to force delete a server
+     *
+     * @param vmid int uniquely identifying the server
+     * @return boolean indicating a successful delete
+     */
+    boolean forceDeleteVM(int vmid);
 
     String getVmStatus(String userId, int vmid);
 

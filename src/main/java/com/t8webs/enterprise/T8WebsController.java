@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 public class T8WebsController {
@@ -72,7 +71,7 @@ public class T8WebsController {
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @PostMapping(value="/requestAccess", produces="application/json")
+    @PatchMapping(value="/requestAccess", produces="application/json")
     public ResponseEntity requestAccess(@AuthenticationPrincipal OAuth2User user) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -88,59 +87,6 @@ public class T8WebsController {
         }
 
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @PostMapping(value="/grantAccess", produces="application/json")
-    public ResponseEntity grantAccess(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="userId") String userId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
-            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
-        }
-
-        if (userDAO.isApproved(userId)) {
-            return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
-        }
-
-        if (userDAO.grantAccess(userId)) {
-            return new ResponseEntity(headers, HttpStatus.OK);
-        }
-
-        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @PostMapping(value="/revokeAccess", produces="application/json")
-    public ResponseEntity revokeAccess(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="userId") String userId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
-            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
-        }
-
-        if (!userDAO.isApproved(userId)) {
-            return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
-        }
-
-        if (userDAO.revokeAccess(userId)) {
-            return new ResponseEntity(headers, HttpStatus.OK);
-        }
-
-        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @GetMapping(value="/allUsers", produces="application/json")
-    public ResponseEntity getAllUsers(@AuthenticationPrincipal OAuth2User user) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
-            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
-        }
-
-        List<User> users = userDAO.getAllUsers();
-        return new ResponseEntity(users, headers, HttpStatus.OK);
     }
 
     @PostMapping(value="/addServer", produces="application/json")
@@ -220,8 +166,8 @@ public class T8WebsController {
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping(value="/servers", produces="application/json")
-    public ResponseEntity getUserServers(@AuthenticationPrincipal OAuth2User user) {
+    @GetMapping(value="/tree", produces="application/json")
+    public ResponseEntity getTree(@AuthenticationPrincipal OAuth2User user) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -229,14 +175,19 @@ public class T8WebsController {
 
             ArrayNode results = mapper.createArrayNode();
 
-            ObjectNode attribute = mapper.createObjectNode();
-            attribute.put("type", 0);
+            if (userDAO.isAdmin(user.getAttribute("sub"))) {
+                ObjectNode adminNode = getAdminTreeNode();
+                results.add(adminNode);
+            }
+
+            ObjectNode attr = mapper.createObjectNode();
+            attr.put("type", 4);
 
             ObjectNode serversNode = mapper.createObjectNode();
-            serversNode.put("id", "0");
+            serversNode.put("id", "4");
             serversNode.put("name", "Servers");
             serversNode.put("expanded", true);
-            serversNode.put("hasAttributes", attribute);
+            serversNode.put("hasAttributes", attr);
 
             ArrayNode serversArray = serverService.getUserServers(user.getAttribute("sub"));
             serversNode.put("subChild", serversArray);
@@ -338,5 +289,40 @@ public class T8WebsController {
         ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
 
         return new ResponseEntity(objectNode, headers, HttpStatus.OK);
+    }
+
+    private ObjectNode getAdminTreeNode() {
+        ObjectNode adminNode = mapper.createObjectNode();
+        adminNode.put("id", "1");
+        adminNode.put("name", "Administration");
+        adminNode.put("expanded", true);
+
+        ObjectNode adminAttr = mapper.createObjectNode();
+        adminAttr.put("type", 1);
+        adminNode.put("hasAttributes", adminAttr);
+
+        ArrayNode adminSubNode = mapper.createArrayNode();
+        ObjectNode usersNode = mapper.createObjectNode();
+        usersNode.put("id", "2");
+        usersNode.put("name", "Users");
+
+        ObjectNode usersAttr = mapper.createObjectNode();
+        usersAttr.put("type", 2);
+        usersNode.put("hasAttributes", usersAttr);
+
+        ObjectNode serversNode = mapper.createObjectNode();
+        serversNode.put("id", "3");
+        serversNode.put("name", "Servers");
+
+        ObjectNode serversAttr = mapper.createObjectNode();
+        serversAttr.put("type", 3);
+        serversNode.put("hasAttributes", serversAttr);
+
+        adminSubNode.add(usersNode);
+        adminSubNode.add(serversNode);
+
+        adminNode.put("subChild", adminSubNode);
+
+        return adminNode;
     }
 }
