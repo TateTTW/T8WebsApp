@@ -73,8 +73,9 @@ public class AssignedServerDAOStub implements IAssignedServerDAO {
      * @return List of all assigned servers
      */
     @Override
-    public List<Server> fetchAll() {
-        return new ArrayList<>(servers.values());
+    public ArrayList<HashMap<String, Object>> fetchAll() {
+        ArrayList<HashMap<String, Object>> arrayList = new ArrayList<>();
+        return arrayList;
     }
 
     /**

@@ -3,6 +3,8 @@ package com.t8webs.enterprise.dao.AssignedServer;
 import com.t8webs.enterprise.dao.DbQuery;
 import com.t8webs.enterprise.dto.Server;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public interface IAssignedServerDAO {
@@ -27,7 +29,7 @@ public interface IAssignedServerDAO {
      *
      * @return List of all assigned servers
      */
-    List<Server> fetchAll();
+    ArrayList<HashMap<String, Object>> fetchAll();
 
     /**
      * Method for fetching server by vmid

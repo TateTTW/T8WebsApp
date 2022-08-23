@@ -22,7 +22,7 @@ public class UserDAO implements IUserDAO {
     public boolean save(User user) throws DbQuery.IntegrityConstraintViolationException {
         DbQuery query = newQuery();
         query.setColumnValue("userId", user.getUserId());
-        query.setColumnValue("name", user.getName());
+        query.setColumnValue("username", user.getName());
         query.setColumnValue("email", user.getEmail());
         query.setColumnValue("status", User.Status.NONE.name());
 
@@ -76,7 +76,7 @@ public class UserDAO implements IUserDAO {
         DbQuery query = newQuery();
         query.addWhere("userId", userId);
 
-        return !parse(query.select()).isEmpty();
+        return !query.select().isEmpty();
     }
 
     /**
@@ -91,7 +91,7 @@ public class UserDAO implements IUserDAO {
         query.addWhere("userId", userId);
         query.addOrWhere("status", new String[]{ User.Status.ADMIN.name(), User.Status.APPROVED.name() });
 
-        return !parse(query.select()).isEmpty();
+        return !query.select().isEmpty();
     }
 
     /**
@@ -106,7 +106,7 @@ public class UserDAO implements IUserDAO {
         query.addWhere("userId", userId);
         query.addWhere("status", User.Status.ADMIN.name());
 
-        return !parse(query.select()).isEmpty();
+        return !query.select().isEmpty();
     }
 
     /**
@@ -135,6 +135,7 @@ public class UserDAO implements IUserDAO {
         DbQuery query = newQuery();
         query.setColumnValue("status", User.Status.NONE.name());
         query.addWhere("userId", userId);
+        query.addWhere("status", User.Status.APPROVED.name());
 
         return query.update();
     }
@@ -184,7 +185,7 @@ public class UserDAO implements IUserDAO {
         for (HashMap valuesMap: results) {
             User user = new User();
             user.setUserId((String) valuesMap.get("userId"));
-            user.setName((String) valuesMap.get("name"));
+            user.setName((String) valuesMap.get("username"));
             user.setEmail((String) valuesMap.get("email"));
             user.setStatus((String) valuesMap.get("status"));
             user.setFound(true);

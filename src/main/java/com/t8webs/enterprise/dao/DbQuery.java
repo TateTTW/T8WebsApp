@@ -25,6 +25,7 @@ public class DbQuery {
     }
 
     private String tableName = "";
+    private StringBuffer join = new StringBuffer();
     private StringBuffer whereCondition = new StringBuffer();
     private HashMap<String, Object> columnValues = new HashMap<>();
 
@@ -35,6 +36,14 @@ public class DbQuery {
      */
     public void setTableName(String tableName) {
         this.tableName = tableName != null ? tableName : "";
+    }
+
+    public void joinTable(String table, String column) {
+        if (table == null || column == null || tableName.isEmpty()) {
+            return;
+        }
+
+        join.append(" JOIN " + table + " ON " + table + "." + column + " = " + tableName + "." + column + " ");
     }
 
     /**
@@ -129,7 +138,7 @@ public class DbQuery {
     public ArrayList<HashMap<String, Object>> select() {
         StringBuffer sql = new StringBuffer();
 
-        sql.append("SELECT * FROM ").append(tableName).append(whereCondition);
+        sql.append("SELECT * FROM ").append(tableName).append(join).append(whereCondition);
 
         return execute(sql.toString());
     }

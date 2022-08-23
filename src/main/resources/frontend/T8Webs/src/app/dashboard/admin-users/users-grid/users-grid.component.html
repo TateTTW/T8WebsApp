@@ -8,7 +8,7 @@
           (toolbarClick)="toolbarClick($event)"
           height='100%'>
   <e-columns>
-    <e-column field='userId' headerText='Id' isPrimaryKey='true' textAlign='Right' width=40></e-column>
+    <e-column field='userId' headerText='Id' isPrimaryKey='true' textAlign='Right' width=40 [visible]="false"></e-column>
     <e-column field='name' headerText='Name' width=20></e-column>
     <e-column field='email' headerText='Email' width=40></e-column>
     <e-column field='status' headerText='Status' width=25></e-column>

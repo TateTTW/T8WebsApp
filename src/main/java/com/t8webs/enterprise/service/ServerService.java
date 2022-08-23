@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -236,11 +237,11 @@ public class ServerService implements IServerService {
 
     @Override
     public ArrayNode getAllServers() {
-        List<Server> servers = assignedServerDAO.fetchAll();
+        List<HashMap<String, Object>> servers = assignedServerDAO.fetchAll();
+
         ArrayNode serverNodes = mapper.createArrayNode();
-        for(Server server: servers){
+        for(HashMap<String, Object> server: servers){
             ObjectNode serverNode = mapper.valueToTree(server);
-            serverNode.remove("userId");
             serverNode.remove("ipAddress");
             serverNode.remove("dnsId");
             serverNodes.add(serverNode);

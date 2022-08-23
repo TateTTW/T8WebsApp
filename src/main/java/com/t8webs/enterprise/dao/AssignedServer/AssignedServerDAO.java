@@ -51,8 +51,10 @@ public class AssignedServerDAO implements IAssignedServerDAO {
      * @return List of all assigned servers
      */
     @Override
-    public List<Server> fetchAll() {
-        return parse(newQuery().select());
+    public ArrayList<HashMap<String, Object>> fetchAll() {
+        DbQuery query = newQuery();
+        query.joinTable("User", "userId");
+        return query.select();
     }
 
     /**
