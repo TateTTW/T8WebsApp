@@ -99,7 +99,7 @@ public class T8WebsController {
         }
 
         try {
-            Server.CreationStatus status = serverService.addServer(user.getAttribute("sub"), serverName.trim());
+            Server.CreationStatus status = serverService.addServer(user.getAttribute("sub"), serverName.toLowerCase().trim());
             if (status == Server.CreationStatus.COMPLETED) {
                 return new ResponseEntity(headers, HttpStatus.OK);
             } else if (status == Server.CreationStatus.BEGIN) {
@@ -139,11 +139,9 @@ public class T8WebsController {
             return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
         }
 
-        if (serverService.renameServer(user.getAttribute("sub"), vmid, serverName)) {
-            return new ResponseEntity(headers, HttpStatus.OK);
-        }
+        HttpStatus status = serverService.renameServer(user.getAttribute("sub"), vmid, serverName);
 
-        return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity(headers, status);
     }
 
     @PostMapping("/deployBuild")

@@ -14,6 +14,16 @@ import java.util.Properties;
  */
 public class DbQuery {
 
+    private static final Properties PROPERTIES;
+    static {
+        PROPERTIES = new Properties();
+        try {
+            PROPERTIES.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private String tableName = "";
     private StringBuffer whereCondition = new StringBuffer();
     private HashMap<String, Object> columnValues = new HashMap<>();
@@ -278,10 +288,7 @@ public class DbQuery {
     private Connection getConnection() throws ClassNotFoundException, SQLException, IOException {
         Class.forName("org.mariadb.jdbc.Driver");
 
-        Properties properties = new Properties();
-        properties.load(T8WebsApplication.class.getClassLoader().getResourceAsStream("application.properties"));
-
-        return DriverManager.getConnection(properties.getProperty("databaseURL"), properties.getProperty("databaseUser"), properties.getProperty("databasePass"));
+        return DriverManager.getConnection(PROPERTIES.getProperty("databaseURL"), PROPERTIES.getProperty("databaseUser"), PROPERTIES.getProperty("databasePass"));
     }
 
     /**

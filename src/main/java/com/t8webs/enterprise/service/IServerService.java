@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.utils.ProxmoxUtil.ProxmoxUtil;
 import kong.unirest.json.JSONObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ public interface IServerService {
      * @param serverName  String to rename the server
      * @return
      */
-    boolean renameServer(String userId, int vmid, String serverName);
+    HttpStatus renameServer(String userId, int vmid, String serverName);
 
     ArrayNode getAllServers();
 

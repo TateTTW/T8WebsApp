@@ -126,9 +126,25 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   }
 
   submitFailure(data: any) {
-    console.log(data);
     this.hideSpinner.emit();
+    if (data?.status == 409) {
+      this.nameConflictError();
+    } else {
+      this.actionError();
+    }
+  }
 
+  nameConflictError() {
+    DialogUtility.alert({
+      title: 'Error',
+      content: "That name is not available. Please choose a different server name.",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
+  }
+
+  actionError() {
     DialogUtility.alert({
       title: 'Error',
       content: "Failed to " + this.job.action + " " + this.job.type + ".",

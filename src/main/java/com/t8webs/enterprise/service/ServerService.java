@@ -14,6 +14,7 @@ import kong.unirest.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -197,11 +198,11 @@ public class ServerService implements IServerService {
      * @return
      */
     @Override
-    public boolean renameServer(String userId, int vmid, String serverName) {
+    public HttpStatus renameServer(String userId, int vmid, String serverName) {
         // Confirm that the server is assigned to user && the new server name can be used
         Server server = assignedServerDAO.fetchUserServer(userId, vmid);
         if(!server.isFound() || !serverNameConforms(serverName) || assignedServerDAO.nameExists(serverName.trim())){
-            return false;
+            return HttpStatus.CONFLICT;
         }
 
         // Update database record, proxy configuration, and dns record
@@ -220,8 +221,9 @@ public class ServerService implements IServerService {
                     logger.error("Failed to update dns record for " + server.toString());
                 }
 
-                return addedProxyEntry && updatedDnsRecord;
-
+                if (addedProxyEntry && updatedDnsRecord) {
+                    return HttpStatus.OK;
+                }
             } else {
                 if (!reverseProxyUtil.addHostEntry(originalName, server.getVmid())) {
                     logger.error(server.toString() + " is missing a reverse proxy host entry.");
@@ -229,7 +231,7 @@ public class ServerService implements IServerService {
             }
         }
 
-        return false;
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     @Override

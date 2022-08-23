@@ -61,11 +61,17 @@ export class UsersGridComponent implements OnInit {
   }
 
   private async grantAccess(userId: string) {
+    this.grid?.showSpinner();
     const response = await this.dashboardService.grantAccess(userId).toPromise();
+    await this.getAllUsers();
+    this.grid?.hideSpinner();
   }
 
   private async revokeAccess(userId: string) {
+    this.grid?.showSpinner();
     const response = await this.dashboardService.revokeAccess(userId).toPromise();
+    await this.getAllUsers();
+    this.grid?.hideSpinner();
   }
 
 }
