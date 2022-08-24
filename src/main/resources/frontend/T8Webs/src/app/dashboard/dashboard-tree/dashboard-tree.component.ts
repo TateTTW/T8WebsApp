@@ -106,7 +106,7 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
 
   public refresh(job?: Job): void {
     //this.refreshHandler(this.treeData, job)
-    this.getServersSub = this.dashboardService.getServers().subscribe(
+    this.getServersSub = this.dashboardService.getTree().subscribe(
       data => this.refreshHandler(data, job),
       error => console.log(error)
     );
@@ -116,9 +116,9 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     this.treeData = data ?? [];
 
     setTimeout(()=> {
-      if(job && job.vmid > 0) {
+      if (job && job.vmid > 0) {
         const node = this.treeView.getNode(job.vmid.toString());
-        if(node){
+        if (node) {
           this.treeView.selectedNodes = [job.vmid.toString()];
 
           const nodeType = NodeType.findNodeTypeByName(job.type);
@@ -142,7 +142,7 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     this.contextMenu.hideItems(['Loading']);
     this.contextMenu.showItems(this.vmItems);
 
-    if(status == 'stopped'){
+    if (status == 'stopped') {
       this.contextMenu.enableItems(['Stop','Reboot'], false);
       this.contextMenu.enableItems(['Start','Edit'], true);
     } else if (status == 'running'){
@@ -160,47 +160,32 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
   }
 
   public nodeClicked(args: NodeClickEventArgs) {
-    let id = args.node.getAttribute('data-uid');
-    let type = args.node.getAttribute('type');
-    let status = args.node.getAttribute('status') ?? '';
-    let text = args.node.innerText;
-
-    if(text.includes("\n")){
-      text = text.substring(0, text.indexOf("\n"));
-    }
-
-    if (args.event.which === 3 && id) {
+    const id = args.node.getAttribute('data-uid');
+    if (id && args.event.which === 3) {
       this.treeView.selectedNodes = [id];
-    }
-
-    if(id && !isNaN(parseInt(id)) && type && !isNaN(parseInt(type))){
-      const nodeId = parseInt(id);
-      const nodeType = NodeType.findNodeTypeById(parseInt(type));
-      const treeNode = new TreeNode(nodeId, text, status, nodeType);
-      this.nodeSelection.emit(treeNode);
     }
   }
 
   public contextMenuClick(args: MenuEventArgs) {
     let nodeIdStr: string = this.treeView?.selectedNodes[0];
-    if(args.item.text && isNaN(parseInt(nodeIdStr))){
+    if (args.item.text && isNaN(parseInt(nodeIdStr))) {
       return;
     }
     const node = this.treeView.getNode(nodeIdStr);
     const nodeId = parseInt(nodeIdStr);
 
-    let nodeType = NodeType.None;
+    let nodeType = NodeType.NONE;
 
-    if(!node['parentID']){
+    if (!node['parentID']) {
       nodeType = NodeType.findNodeTypeById(nodeId);
     } else if (!isNaN(parseInt(<string>node['parentID']))) {
       nodeType = NodeType.findNodeTypeById(parseInt(<string>node['parentID']));
     }
 
     this.doJob.emit({
-      type: (nodeType == NodeType.ServerGroup) ? JobType.Server : JobType.LoadBalancer,
+      type: (nodeType == NodeType.SERVER_GROUP) ? JobType.Server : JobType.LoadBalancer,
       action: Job.findJobAction(args.item.text),
-      vmid: (nodeId !== NodeType.ServerGroup.id && nodeId !== NodeType.BalancerGroup.id) ? nodeId : -1
+      vmid: (nodeId !== NodeType.SERVER_GROUP.id && nodeId !== NodeType.BALANCER_GROUP.id) ? nodeId : -1
     });
   }
 
@@ -208,15 +193,34 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     let id: string = this.treeView.selectedNodes[0];
     let type = parseInt(document.querySelector('[data-uid="' + id + '"]')?.getAttribute('type') ?? '-1');
 
-    if (type == NodeType.ServerGroup.id || type === NodeType.BalancerGroup.id) {
+    if (type == NodeType.SERVER_GROUP.id || type === NodeType.BALANCER_GROUP.id) {
       this.contextMenu.showItems(this.groupItems);
       this.contextMenu.hideItems(this.vmItems.concat(['Loading']));
-    } else {
+    } else if (type == NodeType.SERVER.id) {
       this.contextMenu.hideItems(this.groupItems.concat(this.vmItems));
       this.contextMenu.showItems(['Loading']);
 
       this.getServerStatus(parseInt(id));
+    } else {
+      args.cancel = true;
     }
   }
 
+  nodeSelecting(args: any) {
+    const id = args.node.getAttribute('data-uid');
+    const type = args.node.getAttribute('type');
+    const status = args.node.getAttribute('status') ?? '';
+    let text = args.node.innerText;
+
+    if (text.includes("\n")) {
+      text = text.substring(0, text.indexOf("\n"));
+    }
+
+    if (id && !isNaN(parseInt(id)) && type && !isNaN(parseInt(type))) {
+      const nodeId = parseInt(id);
+      const nodeType = NodeType.findNodeTypeById(parseInt(type));
+      const treeNode = new TreeNode(nodeId, text, status, nodeType);
+      this.nodeSelection.emit(treeNode);
+    }
+  }
 }

@@ -1,4 +1,4 @@
-<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" [allowDragging]="true" [isModal]="true" width='333px' zIndex="500">
+<ejs-dialog #dialog [header]="job.action + ' ' + job.type" [visible]="false" [allowDragging]="true" [isModal]="true" width='333px' zIndex="1100">
   <h3>{{displayServerName}}.T8Webs.com</h3>
   <form [formGroup]="formGroup">
     <div *ngIf="errors['minlength']">
@@ -18,8 +18,7 @@
   <table>
     <tr>
       <td><button ejs-button (click)="close()">Cancel</button></td>
-      <td><button ejs-button (click)="confirm()" isPrimary="true">Submit</button></td>
+      <td><button ejs-button (click)="confirm()" isPrimary="true" [disabled]="validName">Submit</button></td>
     </tr>
   </table>
-  <div id="spinnerDiv"></div>
 </ejs-dialog>

@@ -8,31 +8,37 @@ public class Server {
      * Server's unique identifier
      */
     private int vmid;
+    private String userId;
     private String name = "";
-    private String username = "";
     private String ipAddress = "";
     private String dnsId = "";
-    private String creationStatus = CreationStatus.BEGIN.name();
+    private CreationStatus creationStatus = CreationStatus.NONE;
     private boolean isFound;
 
     public CreationStatus getCreationStatus() {
-        return CreationStatus.valueOf(creationStatus);
+        return creationStatus;
     }
 
     public void setCreationStatus(String status) {
-        for (CreationStatus s : CreationStatus.values()) {
-            if (s.name().equals(status)) {
-                this.creationStatus = status;
+        for (CreationStatus creationStatus : CreationStatus.values()) {
+            if (creationStatus.name().equals(status)) {
+                this.creationStatus = creationStatus;
                 break;
             }
         }
     }
 
     public void setCreationStatus(CreationStatus status) {
-        this.creationStatus = status.name();
+        creationStatus = status != null ? status : CreationStatus.NONE;
+    }
+
+    @Override
+    public String toString() {
+        return "Server { vmid: " + vmid + " name: " + name + " creationStatus: " + creationStatus + " }";
     }
 
     public enum CreationStatus {
+        NONE,
         BEGIN,
         VERIFIED_NAME,
         ASSIGNED,

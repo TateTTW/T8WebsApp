@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {User} from "./dto/user";
+import {User, UserStatus} from "./dto/user";
 import {NodeType, TreeNode} from "./dashboard-tree/TreeNode";
 import {createSpinner, hideSpinner, showSpinner} from "@syncfusion/ej2-angular-popups";
 import {Job, JobAction} from "./server-dialog/Job";
@@ -16,6 +16,7 @@ import {DashboardTreeComponent} from "./dashboard-tree/dashboard-tree.component"
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   // Subscriptions
+  private requestAccessSub: Subscription | undefined;
   private serverStatusSub: Subscription | undefined;
   private startServerSub: Subscription | undefined;
   private stopServerSub: Subscription | undefined;
@@ -26,13 +27,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   @ViewChild ('dashboardTree') dashboardTree!: DashboardTreeComponent;
 
   user: User | undefined;
-  selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+  selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.NONE);
+
+  readonly  NodeType = NodeType;
 
   constructor(private dashboardService: DashboardService) { }
 
   ngOnInit(): void { }
 
   ngOnDestroy(): void {
+    this.requestAccessSub?.unsubscribe();
     this.startServerSub?.unsubscribe();
     this.stopServerSub?.unsubscribe();
     this.rebootServerSub?.unsubscribe();
@@ -69,7 +73,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   nodeSelection(treeNode: TreeNode) {
-    if(treeNode.type == NodeType.Server) {
+    if(treeNode.type == NodeType.SERVER) {
       this.getServerStatus(treeNode);
     }
     this.selectedTreeNode = treeNode;
@@ -97,11 +101,70 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   doJob(job: Job) {
+    if(this.user?.status == UserStatus.REQUESTED){
+      this.awaitingApprovalAlert();
+      return;
+    } else if(this.user?.status == UserStatus.NONE){
+      this.confirmAccessRequest();
+      return;
+    }
+
     if(job.action == JobAction.Add || job.action == JobAction.Rename){
       this.processJob(job);
     }  else {
       this.confirmJob(job);
     }
+  }
+
+  private awaitingApprovalAlert() {
+    DialogUtility.alert({
+      title: "Awaiting Account Approval",
+      content: "Your access request has not yet been approved.",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
+  }
+
+  private confirmAccessRequest() {
+    const dialog = DialogUtility.confirm({
+      title: "Unauthorized User Request",
+      content: "Your account has not been approved. Would you like to request access?",
+      okButton: {
+        text: "Yes",
+        click: () => {
+          this.requestAccessSub = this.dashboardService.requestAccess().subscribe(
+            data => this.accessRequestSuccess(),
+            error => this.accessRequestFailure(error)
+          )
+          dialog.close();
+        }
+      },
+      showCloseIcon: true
+    });
+  }
+
+  private accessRequestSuccess() {
+    if (this.user) {
+      this.user.status = UserStatus.REQUESTED;
+    }
+    DialogUtility.alert({
+      title: "Success",
+      content: "Your request has been submitted.",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
+  }
+
+  private accessRequestFailure(error: any) {
+    DialogUtility.alert({
+      title: "Request Failed",
+      content: "Your request failed to be submitted.",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
   }
 
   private confirmJob(job: Job) {
@@ -180,7 +243,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private handleSuccessfulJob(job: Job, data: any) {
 
     if(job.action == JobAction.Delete){
-      this.selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+      this.selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.NONE);
       this.dashboardTree.refresh();
     }
 

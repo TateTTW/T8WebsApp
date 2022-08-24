@@ -43,9 +43,13 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   get serverName(): AbstractControl | null {
     return this.formGroup.get("serverName");
   }
-  private _errors: ValidationErrors = this.serverName?.errors ?? {};
+
   get errors(): ValidationErrors {
     return this.serverName?.errors ?? {};
+  }
+
+  get validName(): boolean {
+    return Object.values(this.errors).length > 0;
   }
 
   constructor(private dashboardService: DashboardService) { }
@@ -114,7 +118,7 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
 
     DialogUtility.alert({
       title: 'Success',
-      content: "Traffic to the " + serverName + " subdomain will be forwarded to the server on port 8080",
+      content: "Traffic to " + serverName + ".T8Webs.com will be forwarded to this server using port 8080",
       showCloseIcon: true,
       closeOnEscape: true,
       animationSettings: { effect: 'Zoom' }
@@ -122,9 +126,25 @@ export class ServerDialogComponent implements OnInit, OnDestroy {
   }
 
   submitFailure(data: any) {
-    console.log(data);
     this.hideSpinner.emit();
+    if (data?.status == 409) {
+      this.nameConflictError();
+    } else {
+      this.actionError();
+    }
+  }
 
+  nameConflictError() {
+    DialogUtility.alert({
+      title: 'Error',
+      content: "That name is not available. Please choose a different server name.",
+      showCloseIcon: true,
+      closeOnEscape: true,
+      animationSettings: { effect: 'Zoom' }
+    });
+  }
+
+  actionError() {
     DialogUtility.alert({
       title: 'Error',
       content: "Failed to " + this.job.action + " " + this.job.type + ".",

@@ -8,7 +8,7 @@ import {NodeType, TreeNode} from "../../../dashboard-tree/TreeNode";
 })
 export class ServerInfoComponent implements OnInit {
 
-  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.None);
+  @Input() selectedTreeNode = new TreeNode(-1, 'Dashboard', '', NodeType.NONE);
 
   constructor() { }
 

@@ -16,6 +16,7 @@ import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { UploaderModule } from '@syncfusion/ej2-angular-inputs';
 import { ChartModule } from '@syncfusion/ej2-angular-charts';
 import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
+import { GridModule, GroupService, ToolbarService } from '@syncfusion/ej2-angular-grids';
 import { DateTimeService, DateTimeCategoryService, AreaSeriesService, LegendService, TooltipService} from '@syncfusion/ej2-angular-charts';
 
 // Additional Components
@@ -31,6 +32,11 @@ import { ServerInfoComponent } from './dashboard/server-content/content/server-i
 import { CpuGraphComponent } from './dashboard/server-content/content/cpu-graph/cpu-graph.component';
 import { RamGraphComponent } from './dashboard/server-content/content/ram-graph/ram-graph.component';
 import { NetGraphComponent } from './dashboard/server-content/content/net-graph/net-graph.component';
+import { AdminContentComponent } from './dashboard/admin-content/admin-content.component';
+import { AdminServersComponent } from './dashboard/admin-servers/admin-servers.component';
+import { ServersGridComponent } from './dashboard/admin-servers/servers-grid/servers-grid.component';
+import { AdminUsersComponent } from './dashboard/admin-users/admin-users.component';
+import { UsersGridComponent } from './dashboard/admin-users/users-grid/users-grid.component';
 
 @NgModule({
   declarations: [
@@ -46,7 +52,12 @@ import { NetGraphComponent } from './dashboard/server-content/content/net-graph/
     ServerInfoComponent,
     CpuGraphComponent,
     RamGraphComponent,
-    NetGraphComponent
+    NetGraphComponent,
+    AdminContentComponent,
+    AdminServersComponent,
+    ServersGridComponent,
+    AdminUsersComponent,
+    UsersGridComponent
   ],
   imports: [
     FlexLayoutModule,
@@ -66,9 +77,10 @@ import { NetGraphComponent } from './dashboard/server-content/content/net-graph/
     DialogModule,
     FormsModule,
     ReactiveFormsModule,
-    UploaderModule
+    UploaderModule,
+    GridModule
   ],
-  providers: [DateTimeService, DateTimeCategoryService, AreaSeriesService, LegendService, TooltipService],
+  providers: [DateTimeService, DateTimeCategoryService, AreaSeriesService, LegendService, TooltipService, GroupService, ToolbarService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

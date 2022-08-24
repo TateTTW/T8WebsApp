@@ -1,4 +1,28 @@
 {
+  "/forceDeleteServer": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/allUsers": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/revokeAccess": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/grantAccess": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/requestAccess": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/renameServer": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
   "/serverData": {
     "target": "http://localhost:8080",
     "secure": false
@@ -7,7 +31,11 @@
     "target": "http://localhost:8080",
     "secure": false
   },
-  "/servers": {
+  "/tree": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/allServers": {
     "target": "http://localhost:8080",
     "secure": false
   },
@@ -20,6 +48,10 @@
     "secure": false
   },
   "/stopServer": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/rebootServer": {
     "target": "http://localhost:8080",
     "secure": false
   },
