@@ -38,7 +38,7 @@ public class UserDAO implements IUserDAO {
     @Override
     public boolean update(User user) {
         DbQuery query = newQuery();
-        query.setColumnValue("name", user.getName());
+        query.setColumnValue("username", user.getName());
         query.setColumnValue("email", user.getEmail());
         query.addWhere("userId", user.getUserId());
 
@@ -120,6 +120,7 @@ public class UserDAO implements IUserDAO {
         DbQuery query = newQuery();
         query.setColumnValue("status", User.Status.REQUESTED.name());
         query.addWhere("userId", userId);
+        query.addWhere("status", User.Status.NONE.name());
 
         return query.update();
     }
@@ -151,6 +152,7 @@ public class UserDAO implements IUserDAO {
         DbQuery query = newQuery();
         query.setColumnValue("status", User.Status.APPROVED.name());
         query.addWhere("userId", userId);
+        query.addOrWhere("status", new String[]{ User.Status.NONE.name(), User.Status.REQUESTED.name() });
 
         return query.update();
     }
