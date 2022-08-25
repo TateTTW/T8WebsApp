@@ -259,7 +259,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
         }
     }
 
-    private class ApiUrls {
+    private static class ApiUrls {
         public static final String GET_STATUS = "{0}/api2/json/nodes/pve/qemu/{1}/status/current";
         public static final String DELETE_VM = "{0}/api2/json/nodes/pve/qemu/{1}";
         public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/111/clone";

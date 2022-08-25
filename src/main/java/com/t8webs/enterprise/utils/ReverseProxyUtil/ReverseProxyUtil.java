@@ -27,22 +27,22 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
         }
     }
 
-    private static final String POST_HOST_ENTRY_URL = PROPERTIES.getProperty("postHostEntryURL");
-    private static final String DELETE_HOST_ENTRY_URL = PROPERTIES.getProperty("deleteHostEntryURL");
+    private static final String PROXY_IP = PROPERTIES.getProperty("proxyIP");
     private static final String DATAPLANE_AUTH_KEY = PROPERTIES.getProperty("dataplaneAuthKey");
     private static final String DOMAIN_NAME = PROPERTIES.getProperty("domainName");
     private static final String SUBDOMAIN_FORMAT = "{0}.{1}";
 
     @Override
     public boolean addHostEntry(String serverName, int vmid) {
-        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
+        final String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
+        final String url = MessageFormat.format(ApiUrls.POST_HOST_ENTRY, PROXY_IP);
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode jsonNode = mapper.createObjectNode();
         jsonNode.put("key", subdomain);
         jsonNode.put("value", String.valueOf(vmid));
 
-        HttpResponse<JsonNode> response = Unirest.post(POST_HOST_ENTRY_URL)
+        HttpResponse<JsonNode> response = Unirest.post(url)
                 .header("Authorization", DATAPLANE_AUTH_KEY)
                 .header("Content-Type", "application/json")
                 .body(jsonNode.toPrettyString())
@@ -53,8 +53,8 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
 
     @Override
     public boolean deleteHostEntry(String serverName) {
-        String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
-        String url = MessageFormat.format(DELETE_HOST_ENTRY_URL, subdomain);
+        final String subdomain = MessageFormat.format(SUBDOMAIN_FORMAT, serverName.toLowerCase().trim(), DOMAIN_NAME.trim());
+        final String url = MessageFormat.format(ApiUrls.DELETE_HOST_ENTRY, PROXY_IP, subdomain);
 
         HttpResponse<JsonNode> response = Unirest.delete(url)
                 .header("Authorization", DATAPLANE_AUTH_KEY)
@@ -62,5 +62,10 @@ public class ReverseProxyUtil implements IReverseProxyUtil {
                 .asJson();
 
         return response.isSuccess();
+    }
+
+    private static class ApiUrls {
+        private static final String POST_HOST_ENTRY = "{0}/v2/services/haproxy/runtime/maps_entries?map=hosts.map&force_sync=true";
+        private static final String DELETE_HOST_ENTRY = "{0}/v2/services/haproxy/runtime/maps_entries/{1}?map=hosts.map&force_sync=true";
     }
 }
