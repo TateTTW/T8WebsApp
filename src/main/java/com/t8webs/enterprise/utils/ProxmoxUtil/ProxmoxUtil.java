@@ -31,7 +31,9 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     private static final String DOMAIN = PROPERTIES.getProperty("proxmoxIP");
-    private static final String TOKEN = PROPERTIES.getProperty("promoxToken");
+    private static final String TOKEN = PROPERTIES.getProperty("proxmoxToken");
+    private static final String TEMPLATE_ID = PROPERTIES.getProperty("proxmoxTemplateId");
+
     private static final int MIN_VMID = 120;
 
     @Override
@@ -40,10 +42,10 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return false;
         }
 
-        String url = MessageFormat.format(ApiUrls.CLONE_VM, ProxmoxUtil.DOMAIN);
+        String url = MessageFormat.format(ApiUrls.CLONE_VM, DOMAIN, TEMPLATE_ID);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", ProxmoxUtil.TOKEN)
+                .header("Authorization", TOKEN)
                 .queryString("newid", vmid)
                 .queryString("name", vmName)
                 .queryString("storage", "local-lvm")
@@ -278,7 +280,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
     private static class ApiUrls {
         public static final String GET_STATUS = "{0}/api2/json/nodes/pve/qemu/{1}/status/current";
         public static final String DELETE_VM = "{0}/api2/json/nodes/pve/qemu/{1}";
-        public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/111/clone";
+        public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/{1}/clone";
         public static final String START_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/start";
         public static final String SHUTDOWN_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/shutdown";
         public static final String REBOOT_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/reboot";
