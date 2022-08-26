@@ -178,6 +178,13 @@ export class DashboardService {
     return this.getData(url, options);
   }
 
+  getUsersServerData(vmid: number, userId: string): Observable<any> {
+    const url = '/usersServerData';
+    const params = {vmid: vmid, userId: userId};
+    const options = { params: this.createHttpParams(params)};
+    return this.getData(url, options);
+  }
+
   mapServerData(response: any): {netData: NetData, cpuData: { x: Date, y: string }[], ramData: { x: Date, y: string }[]} {
     const threshold = 2048;
     const cpuData: { x: Date, y: string }[] = [];

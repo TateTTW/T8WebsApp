@@ -4,8 +4,8 @@
           [groupSettings]='groupOptions'
           [toolbar]='toolbar'
           [editSettings]='editSettings'
-          (rowSelected)="rowSelected.emit($event)"
-          (rowDeselected)="rowDeselected.emit($event)"
+          (rowSelected)="rowSelected($event)"
+          (rowDeselected)="rowDeselected($event)"
           (toolbarClick)="toolbarClick($event)"
           height='100%'>
   <e-columns>

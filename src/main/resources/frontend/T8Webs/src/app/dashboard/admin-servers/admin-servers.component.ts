@@ -40,9 +40,9 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
     if (event && event.data && event.data.vmid) {
       this.intervalSub?.unsubscribe();
       this.intervalSub = interval(30000).subscribe(() => {
-        this.getServerData(event.data.vmid);
+        this.getServerData(event.data.vmid, event.data.userId);
       });
-      this.getServerData(event.data.vmid);
+      this.getServerData(event.data.vmid, event.data.userId);
     }
   }
 
@@ -53,8 +53,8 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
     this.ramData = [];
   }
 
-  private async getServerData(vmid: number) {
-    const response = await this.dashboardService.getServerData(vmid).toPromise();
+  private async getServerData(vmid: number, userId: string) {
+    const response = await this.dashboardService.getUsersServerData(vmid, userId).toPromise();
     const data = this.dashboardService.mapServerData(response);
     this.netData = data.netData;
     this.cpuData = data.cpuData;
