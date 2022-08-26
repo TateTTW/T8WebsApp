@@ -53,5 +53,12 @@ public interface IServerService {
     String getVmStatus(String userId, int vmid);
 
     JSONObject getVmData(String userId, int vmid, ProxmoxUtil.TimeFrame timeFrame);
+
+    /**
+     * Method for Admins to retrieve system data
+     *
+     * @return JSONObject representation of node data
+     */
+    JSONObject getSystemData(ProxmoxUtil.TimeFrame timeFrame);
 }
 

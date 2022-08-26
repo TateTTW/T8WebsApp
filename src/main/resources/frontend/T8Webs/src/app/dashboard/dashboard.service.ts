@@ -185,12 +185,18 @@ export class DashboardService {
     return this.getData(url, options);
   }
 
-  mapServerData(response: any): {netData: NetData, cpuData: { x: Date, y: string }[], ramData: { x: Date, y: string }[]} {
+  getSystemData(): Observable<any> {
+    const url = '/systemData';
+    return this.getData(url, undefined);
+  }
+
+  mapServerData(response: any): {netData: NetData, cpuData: { x: Date, y: string }[], ramData: { x: Date, y: string }[], maxRam: number} {
     const threshold = 2048;
     const cpuData: { x: Date, y: string }[] = [];
     const ramData: { x: Date, y: string }[] = [];
     const netData: NetData = {unit: 'Kb', netIn: [], netOut: []};
     const netDataCompressed: {netIn: { x: Date, y: string }, netOut: { x: Date, y: string }}[] = [];
+    let maxRam = 0;
 
     if (response && response.data && Array.isArray(response.data)) {
       response.data.forEach((dataObj: any) => {
@@ -200,7 +206,11 @@ export class DashboardService {
         const netIn = (dataObj.netin ?? 0).toFixed(2);
         const netOut = (dataObj.netout ?? 0).toFixed(2);
         const cpu = ((dataObj.cpu ?? 0) * 100).toFixed(2);
-        const mem = (Number(dataObj.mem ?? 0) / 1048576).toFixed(2);
+        const mem = (Number((dataObj.memused ?? dataObj.mem) ?? 0) / 1048576).toFixed(2); //memused
+
+        if (maxRam === 0 && (dataObj.memtotal || dataObj.maxmem)) {
+          maxRam = Number((Number((dataObj.memtotal ?? dataObj.maxmem) ?? 0) / 1048576).toFixed(2));
+        }
 
         if(netIn > threshold || netOut > threshold){
           netData.unit = 'Mb';
@@ -226,6 +236,6 @@ export class DashboardService {
       });
     }
 
-    return {netData: netData, cpuData: cpuData, ramData: ramData};
+    return {netData: netData, cpuData: cpuData, ramData: ramData, maxRam: maxRam};
   }
 }

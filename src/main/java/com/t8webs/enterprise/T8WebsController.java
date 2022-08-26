@@ -292,7 +292,7 @@ public class T8WebsController {
     private ObjectNode getAdminTreeNode() {
         ObjectNode adminNode = mapper.createObjectNode();
         adminNode.put("id", "1");
-        adminNode.put("name", "Administration");
+        adminNode.put("name", "System");
         adminNode.put("expanded", true);
 
         ObjectNode adminAttr = mapper.createObjectNode();

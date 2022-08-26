@@ -9,6 +9,8 @@ public interface IProxmoxUtil {
 
     JSONObject getVmData(int vmid, ProxmoxUtil.TimeFrame timeFrame);
 
+    JSONObject getNodeData(ProxmoxUtil.TimeFrame timeFrame);
+
     boolean isVmRunning(int vmid);
 
     boolean isVmLocked(int vmid);

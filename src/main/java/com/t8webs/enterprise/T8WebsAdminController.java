@@ -125,4 +125,19 @@ public class T8WebsAdminController {
 
         return new ResponseEntity(objectNode, headers, HttpStatus.OK);
     }
+
+    @GetMapping(value="/systemData", produces="application/json")
+    public ResponseEntity getSystemData(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        JSONObject jsonObject = serverService.getSystemData(ProxmoxUtil.TimeFrame.HOUR);
+        ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
+
+        return new ResponseEntity(objectNode, headers, HttpStatus.OK);
+    }
 }

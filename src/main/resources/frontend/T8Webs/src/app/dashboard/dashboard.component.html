@@ -9,9 +9,6 @@
       <div *ngIf="this.selectedTreeNode.type == NodeType.NONE || this.selectedTreeNode.type == NodeType.SERVER_GROUP || this.selectedTreeNode.type == NodeType.ADMIN_GROUP">
         <homepage [inDashboard]="true" (retrievedUser)="setUser($event)"></homepage>
       </div>
-<!--      <div *ngIf="this.selectedTreeNode.type == NodeType.ADMIN_GROUP">-->
-<!--        <admin-content></admin-content>-->
-<!--      </div>-->
       <div *ngIf="this.selectedTreeNode.type == NodeType.ADMIN_USERS">
         <admin-users></admin-users>
       </div>

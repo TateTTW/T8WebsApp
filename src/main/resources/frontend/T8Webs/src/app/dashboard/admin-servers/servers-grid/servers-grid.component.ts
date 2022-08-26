@@ -17,15 +17,17 @@ export class ServersGridComponent implements OnInit, OnDestroy {
 
   @Output() rowSelectedEvent: EventEmitter<number> = new EventEmitter<number>();
   @Output() rowDeselectedEvent: EventEmitter<any> = new EventEmitter<any>();
+  @Output() systemDataClicked: EventEmitter<any> = new EventEmitter<any>();
   @Output() refreshTree: EventEmitter<any> = new EventEmitter<any>();
 
   data: any = [];
-  groupOptions = { showDropArea: false, columns: ["creationStatus"] };
+  groupOptions = { showDropArea: false, columns: ["creationStatus", "userId"] };
   selectionOptions: SelectionSettingsModel = { type: 'Single' };
   editSettings: EditSettingsModel = { allowEditing: true, allowAdding: false, allowDeleting: true };
   toolbar = [
-    { text: 'Delete', prefixIcon: 'fa fa-trash', id: 'delete', align: 'Left', disabled: true },
-    { text: '', prefixIcon: 'fa fa-refresh', id: 'refresh', align: 'Right', disabled: false }
+    { text: 'System Data', prefixIcon: 'fa fa-server', id: 'system', align: 'Left', disabled: true },
+    { text: 'Delete', prefixIcon: 'fa fa-trash', id: 'delete', align: 'Right', disabled: true },
+    { text: 'Refresh', prefixIcon: 'fa fa-refresh', id: 'refresh', align: 'Right', disabled: false }
     ];
 
   constructor(private dashboardService: DashboardService) { }
@@ -56,8 +58,11 @@ export class ServersGridComponent implements OnInit, OnDestroy {
     if (event?.item?.properties?.id) {
       const toolbarItem = event.item.properties.id;
       const selectedRows = this.grid?.getSelectedRecords() ?? [];
-
-      if (toolbarItem == "refresh") {
+      if (toolbarItem == "system") {
+        this.grid?.toolbarModule.enableItems(["system"], false);
+        this.grid?.selectionModule.clearRowSelection();
+        this.systemDataClicked.emit();
+      } else if (toolbarItem == "refresh") {
         this.getGridData();
       } else if (toolbarItem == "delete"
         && selectedRows.length > 0
@@ -74,6 +79,7 @@ export class ServersGridComponent implements OnInit, OnDestroy {
     if (event?.data?.creationStatus && event.data.creationStatus != "IN PROGRESS") {
       this.grid?.toolbarModule.enableItems(["delete"], true);
     }
+    this.grid?.toolbarModule.enableItems(["system"], true);
     this.rowSelectedEvent.emit(event);
   }
 

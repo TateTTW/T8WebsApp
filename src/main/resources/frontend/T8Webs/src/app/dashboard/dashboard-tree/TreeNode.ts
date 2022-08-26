@@ -15,7 +15,7 @@ export class TreeNode {
 
 export class NodeType {
   public static readonly NONE = new NodeType(0, 'Dashboard');
-  public static readonly ADMIN_GROUP = new NodeType(1, 'Administration');
+  public static readonly ADMIN_GROUP = new NodeType(1, 'System');
   public static readonly ADMIN_USERS = new NodeType(2, 'Users');
   public static readonly ADMIN_SERVERS = new NodeType(3, 'Servers');
   public static readonly SERVER_GROUP = new NodeType(4, 'Servers');
