@@ -18,7 +18,7 @@ export class UsersGridComponent implements OnInit {
   toolbar = [
     { text: 'Grant', prefixIcon: 'fa fa-check', id: 'grant', align: 'Left', disabled: true },
     { text: 'Revoke', prefixIcon: 'fa fa-times', id: 'revoke', align: 'Left', disabled: true },
-    { text: 'Refresh', prefixIcon: 'fa fa-refresh', id: 'refresh', align: 'Right', disabled: false }
+    { text: 'Refresh', prefixIcon: 'fa fa-sync-alt', id: 'refresh', align: 'Right', disabled: false }
     ];
 
   constructor(private dashboardService: DashboardService) { }

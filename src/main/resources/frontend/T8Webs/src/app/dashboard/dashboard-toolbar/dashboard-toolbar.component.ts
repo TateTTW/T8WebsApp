@@ -37,11 +37,11 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
   public editMenuItems: ButtonItemModel[] = [
     {
       text: 'Rename',
-      iconCss: 'fa fa-pencil'
+      iconCss: 'fa fa-pencil-alt'
     },
     {
       text: 'Delete',
-      iconCss: 'fa fa-trash'
+      iconCss: 'fa fa-trash-alt'
     }
   ];
 

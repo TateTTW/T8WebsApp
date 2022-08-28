@@ -20,6 +20,7 @@
     "@angular/platform-browser": "~13.1.0",
     "@angular/platform-browser-dynamic": "~13.1.0",
     "@angular/router": "~13.1.0",
+    "@fortawesome/fontawesome-free": "^5.15.4",
     "@syncfusion/ej2-angular-buttons": "^19.4.38",
     "@syncfusion/ej2-angular-charts": "^19.4.38",
     "@syncfusion/ej2-angular-grids": "^19.4.56",

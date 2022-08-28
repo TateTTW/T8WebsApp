@@ -14,7 +14,7 @@
     </div>
     <div id="editSubmenu">
       <button #editSubmenu ejs-dropdownbutton (select)="editSelect($event)" [items]="editMenuItems">
-        <i class="fa fa-gear"></i>Edit
+        <i class="fa fa-cog"></i>Edit
       </button>
     </div>
     <ejs-toolbar #toolbar (clicked)="toolbarClick($event)" (created)='created()'>
@@ -24,7 +24,7 @@
         <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
           <e-item prefixIcon="fa fa-stop" text="Stop" cssClass="item" [visible]="false"></e-item>
         <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
-          <e-item prefixIcon="fa fa-refresh" text="Reboot" cssClass="item" [visible]="false"></e-item>
+          <e-item prefixIcon="fa fa-sync-alt" text="Reboot" cssClass="item" [visible]="false"></e-item>
         <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
           <e-item template='#editSubmenu' cssClass="item" [visible]="false"></e-item>
         <e-item template='#loginAndOut' align="Right" cssClass="persist"></e-item>

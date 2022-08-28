@@ -26,8 +26,8 @@ export class ServersGridComponent implements OnInit, OnDestroy {
   editSettings: EditSettingsModel = { allowEditing: true, allowAdding: false, allowDeleting: true };
   toolbar = [
     { text: 'System Data', prefixIcon: 'fa fa-server', id: 'system', align: 'Left', disabled: true },
-    { text: 'Delete', prefixIcon: 'fa fa-trash', id: 'delete', align: 'Right', disabled: true },
-    { text: 'Refresh', prefixIcon: 'fa fa-refresh', id: 'refresh', align: 'Right', disabled: false }
+    { text: 'Delete', prefixIcon: 'fa fa-trash-alt', id: 'delete', align: 'Right', disabled: true },
+    { text: 'Refresh', prefixIcon: 'fa fa-sync-alt', id: 'refresh', align: 'Right', disabled: false }
     ];
 
   constructor(private dashboardService: DashboardService) { }

@@ -89,7 +89,7 @@ export class DashboardTreeComponent implements OnInit, OnDestroy {
     },
     {
       text: 'Reboot',
-      iconCss: 'fa fa-refresh'
+      iconCss: 'fa fa-sync-alt'
     }
   ];
 
