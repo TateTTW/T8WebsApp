@@ -164,41 +164,6 @@ public class T8WebsController {
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping(value="/tree", produces="application/json")
-    public ResponseEntity getTree(@AuthenticationPrincipal OAuth2User user) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        try {
-
-            ArrayNode results = mapper.createArrayNode();
-
-            if (userDAO.isAdmin(user.getAttribute("sub"))) {
-                ObjectNode adminNode = getAdminTreeNode();
-                results.add(adminNode);
-            }
-
-            ObjectNode attr = mapper.createObjectNode();
-            attr.put("type", 4);
-
-            ObjectNode serversNode = mapper.createObjectNode();
-            serversNode.put("id", "4");
-            serversNode.put("name", "Servers");
-            serversNode.put("expanded", true);
-            serversNode.put("hasAttributes", attr);
-
-            ArrayNode serversArray = serverService.getUserServers(user.getAttribute("sub"));
-            serversNode.put("subChild", serversArray);
-            results.add(serversNode);
-
-            return new ResponseEntity(results, headers, HttpStatus.OK);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     @PatchMapping("/startServer")
     public ResponseEntity startServer(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="vmid") int vmid) {
         HttpHeaders headers = new HttpHeaders();
@@ -289,10 +254,45 @@ public class T8WebsController {
         return new ResponseEntity(objectNode, headers, HttpStatus.OK);
     }
 
+    @GetMapping(value="/tree", produces="application/json")
+    public ResponseEntity getTree(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+
+            ArrayNode results = mapper.createArrayNode();
+
+            if (userDAO.isAdmin(user.getAttribute("sub"))) {
+                ObjectNode adminNode = getAdminTreeNode();
+                results.add(adminNode);
+            }
+
+            ObjectNode attr = mapper.createObjectNode();
+            attr.put("type", 4);
+
+            ObjectNode serversNode = mapper.createObjectNode();
+            serversNode.put("id", "4");
+            serversNode.put("name", "Servers");
+            serversNode.put("expanded", true);
+            serversNode.put("hasAttributes", attr);
+
+            ArrayNode serversArray = serverService.getUserServers(user.getAttribute("sub"));
+            serversNode.put("subChild", serversArray);
+            results.add(serversNode);
+
+            return new ResponseEntity(results, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private ObjectNode getAdminTreeNode() {
         ObjectNode adminNode = mapper.createObjectNode();
         adminNode.put("id", "1");
-        adminNode.put("name", "Administration");
+        adminNode.put("name", "System");
         adminNode.put("expanded", true);
 
         ObjectNode adminAttr = mapper.createObjectNode();

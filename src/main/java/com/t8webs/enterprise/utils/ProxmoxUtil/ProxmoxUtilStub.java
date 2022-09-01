@@ -38,6 +38,11 @@ public class ProxmoxUtilStub implements IProxmoxUtil {
     }
 
     @Override
+    public JSONObject getNodeData(ProxmoxUtil.TimeFrame timeFrame) {
+        return null;
+    }
+
+    @Override
     public boolean isVmRunning(int vmid) {
         return getVmStatus(vmid).equals(ProxmoxUtil.State.RUNNING.name().toLowerCase());
     }

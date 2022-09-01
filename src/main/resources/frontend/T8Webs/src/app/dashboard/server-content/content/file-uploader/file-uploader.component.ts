@@ -35,10 +35,7 @@ export class FileUploaderComponent implements OnInit, OnDestroy {
   }
 
   submit() {
-    const msg = "Deploying a build containing any of the following will result in the removal of this server:<br/><br/>"
-      + "- Malicious code<br/>"
-      + "- Copyrighted material<br/>"
-      + "- Pornographic material<br/><br/>";
+    const msg = "Deploying a build containing illegal material or malicious code will result in the removal of your account.";
 
     const dialog = DialogUtility.confirm({
       title: "Warning",

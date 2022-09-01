@@ -32,7 +32,6 @@ import { ServerInfoComponent } from './dashboard/server-content/content/server-i
 import { CpuGraphComponent } from './dashboard/server-content/content/cpu-graph/cpu-graph.component';
 import { RamGraphComponent } from './dashboard/server-content/content/ram-graph/ram-graph.component';
 import { NetGraphComponent } from './dashboard/server-content/content/net-graph/net-graph.component';
-import { AdminContentComponent } from './dashboard/admin-content/admin-content.component';
 import { AdminServersComponent } from './dashboard/admin-servers/admin-servers.component';
 import { ServersGridComponent } from './dashboard/admin-servers/servers-grid/servers-grid.component';
 import { AdminUsersComponent } from './dashboard/admin-users/admin-users.component';
@@ -53,7 +52,6 @@ import { UsersGridComponent } from './dashboard/admin-users/users-grid/users-gri
     CpuGraphComponent,
     RamGraphComponent,
     NetGraphComponent,
-    AdminContentComponent,
     AdminServersComponent,
     ServersGridComponent,
     AdminUsersComponent,

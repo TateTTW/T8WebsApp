@@ -17,6 +17,7 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
   netData: NetData = {unit: 'Kb', netIn: [], netOut: []};
   cpuData: { x: Date, y: string }[] = [];
   ramData: { x: Date, y: string }[] = [];
+  maxRam = 0;
 
   public mediaQuery: string = 'max-width: 1230px';
   public draggableHandle: string = ".e-panel-header";
@@ -26,6 +27,7 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
   constructor(private dashboardService: DashboardService) { }
 
   ngOnInit(): void {
+    this.trackSystemData({});
   }
 
   ngAfterViewChecked(): void {
@@ -36,16 +38,6 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
     this.intervalSub?.unsubscribe();
   }
 
-  trackServerData(event: any) {
-    if (event && event.data && event.data.vmid) {
-      this.intervalSub?.unsubscribe();
-      this.intervalSub = interval(30000).subscribe(() => {
-        this.getServerData(event.data.vmid);
-      });
-      this.getServerData(event.data.vmid);
-    }
-  }
-
   haltServerData(event: any) {
     this.intervalSub?.unsubscribe();
     this.netData = {unit: 'Kb', netIn: [], netOut: []};
@@ -53,11 +45,39 @@ export class AdminServersComponent implements OnInit, AfterViewChecked, OnDestro
     this.ramData = [];
   }
 
-  private async getServerData(vmid: number) {
-    const response = await this.dashboardService.getServerData(vmid).toPromise();
+  trackServerData(event: any) {
+    if (event?.data?.vmid) {
+      this.intervalSub?.unsubscribe();
+      this.intervalSub = interval(30000).subscribe(() => {
+        this.getServerData(event.data.vmid, event.data.userId);
+      });
+      this.getServerData(event.data.vmid, event.data.userId);
+    }
+  }
+
+  trackSystemData(event: any) {
+    this.intervalSub?.unsubscribe();
+    this.intervalSub = interval(30000).subscribe(() => {
+      this.getSystemData();
+    });
+    this.getSystemData();
+  }
+
+  private async getServerData(vmid: number, userId: string) {
+    const response = await this.dashboardService.getUsersServerData(vmid, userId).toPromise();
     const data = this.dashboardService.mapServerData(response);
     this.netData = data.netData;
     this.cpuData = data.cpuData;
     this.ramData = data.ramData;
+    this.maxRam = data.maxRam
+  }
+
+  private async getSystemData() {
+    const response = await this.dashboardService.getSystemData().toPromise();
+    const data = this.dashboardService.mapServerData(response);
+    this.netData = data.netData;
+    this.cpuData = data.cpuData;
+    this.ramData = data.ramData;
+    this.maxRam = data.maxRam;
   }
 }

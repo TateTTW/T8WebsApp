@@ -9,15 +9,16 @@ import {UserStatus} from "../../dto/user";
   styleUrls: ['./users-grid.component.less']
 })
 export class UsersGridComponent implements OnInit {
-// View Elements
+  // View Elements
   @ViewChild('grid') grid?: GridComponent;
 
   data: any = [];
   groupOptions = { showDropArea: false, columns: ["status"] };
   selectionOptions: SelectionSettingsModel = { type: 'Single' };
   toolbar = [
-    { text: 'Grant', prefixIcon: 'fa fa-check', id: 'grant', align: 'Left', disabled: 'true' },
-    { text: 'Revoke', prefixIcon: 'fa fa-times', id: 'revoke', align: 'Left', disabled: 'true' }
+    { text: 'Grant', prefixIcon: 'fa fa-check', id: 'grant', align: 'Left', disabled: true },
+    { text: 'Revoke', prefixIcon: 'fa fa-times', id: 'revoke', align: 'Left', disabled: true },
+    { text: 'Refresh', prefixIcon: 'fa fa-sync-alt', id: 'refresh', align: 'Right', disabled: false }
     ];
 
   constructor(private dashboardService: DashboardService) { }
@@ -33,14 +34,16 @@ export class UsersGridComponent implements OnInit {
 
   toolbarClick(event: any) {
     const selectedRows = this.grid?.getSelectedRecords() ?? [];
-    if (event?.item?.properties?.id && selectedRows.length > 0 && selectedRows[0].hasOwnProperty("userId")) {
-      // @ts-ignore
-      const userId = selectedRows[0].userId;
+    if (event?.item?.properties?.id) {
       const toolbarItem = event.item.properties.id;
-      if (toolbarItem == "grant") {
-        this.grantAccess(userId);
-      } else if (toolbarItem == "revoke") {
-        this.revokeAccess(userId);
+      if (toolbarItem == "grant" && selectedRows.length > 0 && selectedRows[0].hasOwnProperty("userId")) {
+        // @ts-ignore
+        this.grantAccess(selectedRows[0].userId);
+      } else if (toolbarItem == "revoke" && selectedRows.length > 0 && selectedRows[0].hasOwnProperty("userId")) {
+        // @ts-ignore
+        this.revokeAccess(selectedRows[0].userId);
+      } else if (toolbarItem == "refresh") {
+        this.getAllUsers();
       }
     }
   }

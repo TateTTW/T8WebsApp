@@ -1,9 +1,13 @@
 package com.t8webs.enterprise;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.t8webs.enterprise.dao.User.IUserDAO;
 import com.t8webs.enterprise.dto.User;
 import com.t8webs.enterprise.service.IServerService;
+import com.t8webs.enterprise.utils.ProxmoxUtil.ProxmoxUtil;
+import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +26,8 @@ public class T8WebsAdminController {
     IServerService serverService;
     @Autowired
     IUserDAO userDAO;
+
+    private ObjectMapper mapper = new ObjectMapper();
 
     @PatchMapping(value="/grantAccess", produces="application/json")
     public ResponseEntity grantAccess(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="userId") String userId) {
@@ -103,5 +109,35 @@ public class T8WebsAdminController {
         }
 
         return new ResponseEntity(headers, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping(value="/usersServerData", produces="application/json")
+    public ResponseEntity getUsersServerData(@AuthenticationPrincipal OAuth2User user, @RequestParam(value="vmid")  int vmid, @RequestParam(value="userId") String userId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        JSONObject jsonObject = serverService.getVmData(userId, vmid, ProxmoxUtil.TimeFrame.HOUR);
+        ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
+
+        return new ResponseEntity(objectNode, headers, HttpStatus.OK);
+    }
+
+    @GetMapping(value="/systemData", produces="application/json")
+    public ResponseEntity getSystemData(@AuthenticationPrincipal OAuth2User user) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (!userDAO.isAdmin(user.getAttribute("sub"))) {
+            return new ResponseEntity(headers, HttpStatus.UNAUTHORIZED);
+        }
+
+        JSONObject jsonObject = serverService.getSystemData(ProxmoxUtil.TimeFrame.HOUR);
+        ObjectNode objectNode = mapper.valueToTree(jsonObject.toMap());
+
+        return new ResponseEntity(objectNode, headers, HttpStatus.OK);
     }
 }

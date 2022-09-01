@@ -31,7 +31,9 @@ public class ProxmoxUtil implements IProxmoxUtil {
     }
 
     private static final String DOMAIN = PROPERTIES.getProperty("proxmoxIP");
-    private static final String TOKEN = PROPERTIES.getProperty("promoxToken");
+    private static final String TOKEN = PROPERTIES.getProperty("proxmoxToken");
+    private static final String TEMPLATE_ID = PROPERTIES.getProperty("proxmoxTemplateId");
+
     private static final int MIN_VMID = 120;
 
     @Override
@@ -40,10 +42,10 @@ public class ProxmoxUtil implements IProxmoxUtil {
             return false;
         }
 
-        String url = MessageFormat.format(ApiUrls.CLONE_VM, ProxmoxUtil.DOMAIN);
+        String url = MessageFormat.format(ApiUrls.CLONE_VM, DOMAIN, TEMPLATE_ID);
 
         HttpResponse<JsonNode> response = Unirest.post(url)
-                .header("Authorization", ProxmoxUtil.TOKEN)
+                .header("Authorization", TOKEN)
                 .queryString("newid", vmid)
                 .queryString("name", vmName)
                 .queryString("storage", "local-lvm")
@@ -56,7 +58,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public String getVmStatus(int vmid) {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return "";
         }
 
@@ -66,7 +68,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.isSuccess()){
+        if (response.isSuccess()) {
             return response.getBody().getObject().getJSONObject("data").getString("status");
         }
 
@@ -75,7 +77,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public JSONObject getVmData(int vmid, TimeFrame timeFrame) {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return new JSONObject();
         }
 
@@ -85,7 +87,23 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.isSuccess()){
+        if (response.isSuccess()) {
+            return response.getBody().getObject();
+        }
+
+        return new JSONObject();
+    }
+
+    @Override
+    public JSONObject getNodeData(TimeFrame timeFrame) {
+
+        String url = MessageFormat.format(ApiUrls.GET_NODE_DATA, DOMAIN, timeFrame.name().toLowerCase());
+
+        HttpResponse<JsonNode> response = Unirest.get(url)
+                .header("Authorization", TOKEN)
+                .asJson();
+
+        if (response.isSuccess()) {
             return response.getBody().getObject();
         }
 
@@ -99,7 +117,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public boolean isVmLocked(int vmid) {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return true;
         }
 
@@ -109,7 +127,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .header("Authorization", TOKEN)
                 .asJson();
 
-        if(response.isSuccess()){
+        if (response.isSuccess()) {
             return response.getBody().getObject().getJSONObject("data").has("lock");
         }
 
@@ -120,12 +138,12 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Retryable(maxAttempts=50, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean reachedState(State expectedState, int vmid) throws InvalidVmStateException {
 
-        if(isVmLocked(vmid)){
+        if (isVmLocked(vmid)) {
             throw new InvalidVmStateException(vmid);
         }
 
-        if( (expectedState == State.RUNNING && getServerIp(vmid).isEmpty())
-                || (expectedState == State.STOPPED && isVmRunning(vmid)) ) {
+        if ((expectedState == State.RUNNING && getServerIp(vmid).isEmpty())
+                || (expectedState == State.STOPPED && isVmRunning(vmid))) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -135,11 +153,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=30, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean startVM(int vmid) throws InvalidVmStateException {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return false;
         }
 
-        if(isVmLocked(vmid)){
+        if (isVmLocked(vmid)) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -155,11 +173,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean shutdownVM(int vmid) throws InvalidVmStateException {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return false;
         }
 
-        if(isVmLocked(vmid)){
+        if (isVmLocked(vmid)) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -175,11 +193,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=6, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public boolean rebootVM(int vmid) throws InvalidVmStateException {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return false;
         }
 
-        if(isVmLocked(vmid)){
+        if (isVmLocked(vmid)) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -194,11 +212,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
 
     @Override
     public boolean deleteVM(int vmid) {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return false;
         }
 
-        if(isVmLocked(vmid) || isVmRunning(vmid)){
+        if (isVmLocked(vmid) || isVmRunning(vmid)) {
             return false;
         }
 
@@ -214,11 +232,11 @@ public class ProxmoxUtil implements IProxmoxUtil {
     @Override
     @Retryable(maxAttempts=18, value=InvalidVmStateException.class, backoff=@Backoff(delay = 5000))
     public String getServerIp(int vmid) throws InvalidVmStateException {
-        if(vmid < MIN_VMID){
+        if (vmid < MIN_VMID) {
             return "";
         }
 
-        if(!isVmRunning(vmid)){
+        if (!isVmRunning(vmid)) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -228,7 +246,7 @@ public class ProxmoxUtil implements IProxmoxUtil {
                 .header("Authorization", TOKEN)
                 .asJson();
 
-        if(!response.isSuccess()){
+        if (!response.isSuccess()) {
             throw new InvalidVmStateException(vmid);
         }
 
@@ -259,15 +277,16 @@ public class ProxmoxUtil implements IProxmoxUtil {
         }
     }
 
-    private class ApiUrls {
+    private static class ApiUrls {
         public static final String GET_STATUS = "{0}/api2/json/nodes/pve/qemu/{1}/status/current";
         public static final String DELETE_VM = "{0}/api2/json/nodes/pve/qemu/{1}";
-        public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/111/clone";
+        public static final String CLONE_VM = "{0}/api2/json/nodes/pve/qemu/{1}/clone";
         public static final String START_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/start";
         public static final String SHUTDOWN_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/shutdown";
         public static final String REBOOT_VM = "{0}/api2/json/nodes/pve/qemu/{1}/status/reboot";
         public static final String GET_VM_IP = "{0}/api2/json/nodes/pve/qemu/{1}/agent/network-get-interfaces";
-        public static final String GET_VM_DATA= "{0}/api2/json/nodes/pve/qemu/{1}/rrddata?timeframe={2}";
+        public static final String GET_VM_DATA = "{0}/api2/json/nodes/pve/qemu/{1}/rrddata?timeframe={2}";
+        public static final String GET_NODE_DATA = "{0}/api2/json/nodes/pve/rrddata?timeframe={1}";
     }
 
     public enum State {

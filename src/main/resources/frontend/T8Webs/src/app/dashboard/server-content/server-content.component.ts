@@ -33,6 +33,7 @@ export class ServerContentComponent implements OnInit, AfterViewChecked, OnChang
   netData: NetData = {unit: 'Kb', netIn: [], netOut: []};
   cpuData: { x: Date, y: string }[] = [];
   ramData: { x: Date, y: string }[] = [];
+  maxRam = 0;
 
   public mediaQuery: string = 'max-width: 1230px';
   public draggableHandle: string = ".e-panel-header";
@@ -68,5 +69,6 @@ export class ServerContentComponent implements OnInit, AfterViewChecked, OnChang
     this.netData = data.netData;
     this.cpuData = data.cpuData;
     this.ramData = data.ramData;
+    this.maxRam  = data.maxRam;
   }
 }

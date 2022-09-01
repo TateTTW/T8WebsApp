@@ -109,7 +109,7 @@ public class UserDAOStub implements IUserDAO {
     @Override
     public boolean requestAccess(String userId) {
         User user = users.get(userId);
-        if (user != null) {
+        if (user != null && user.getStatus() == User.Status.NONE) {
             user.setStatus(User.Status.REQUESTED);
             return true;
         }
@@ -126,7 +126,7 @@ public class UserDAOStub implements IUserDAO {
     @Override
     public boolean revokeAccess(String userId) {
         User user = users.get(userId);
-        if (user != null) {
+        if (user != null && user.getStatus() == User.Status.APPROVED) {
             user.setStatus(User.Status.NONE);
             return true;
         }
@@ -143,7 +143,7 @@ public class UserDAOStub implements IUserDAO {
     @Override
     public boolean grantAccess(String userId) {
         User user = users.get(userId);
-        if (user != null) {
+        if (user != null && !user.isApproved()) {
             user.setStatus(User.Status.APPROVED);
             return true;
         }

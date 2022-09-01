@@ -15,15 +15,20 @@ export class ServersGridComponent implements OnInit, OnDestroy {
   // Subscriptions
   private deleteServerSub: Subscription | undefined;
 
-  @Output() rowSelected: EventEmitter<number> = new EventEmitter<number>();
-  @Output() rowDeselected: EventEmitter<any> = new EventEmitter<any>();
+  @Output() rowSelectedEvent: EventEmitter<number> = new EventEmitter<number>();
+  @Output() rowDeselectedEvent: EventEmitter<any> = new EventEmitter<any>();
+  @Output() systemDataClicked: EventEmitter<any> = new EventEmitter<any>();
   @Output() refreshTree: EventEmitter<any> = new EventEmitter<any>();
 
   data: any = [];
-  groupOptions = { showDropArea: false, columns: ["creationStatus"] };
+  groupOptions = { showDropArea: false, columns: ["creationStatus", "userId"] };
   selectionOptions: SelectionSettingsModel = { type: 'Single' };
   editSettings: EditSettingsModel = { allowEditing: true, allowAdding: false, allowDeleting: true };
-  toolbar: ToolbarItems[] = ["Delete"];
+  toolbar = [
+    { text: 'System Data', prefixIcon: 'fa fa-server', id: 'system', align: 'Left', disabled: true },
+    { text: 'Delete', prefixIcon: 'fa fa-trash-alt', id: 'delete', align: 'Right', disabled: true },
+    { text: 'Refresh', prefixIcon: 'fa fa-sync-alt', id: 'refresh', align: 'Right', disabled: false }
+    ];
 
   constructor(private dashboardService: DashboardService) { }
 
@@ -50,11 +55,37 @@ export class ServersGridComponent implements OnInit, OnDestroy {
   }
 
   toolbarClick(event: any) {
-    const selectedRows = this.grid?.getSelectedRecords() ?? [];
-    if (selectedRows.length > 0 && selectedRows[0].hasOwnProperty("vmid") && selectedRows[0].hasOwnProperty("name")) {
-      // @ts-ignore
-      this.confirmDelete(selectedRows[0].vmid, selectedRows[0].name);
+    if (event?.item?.properties?.id) {
+      const toolbarItem = event.item.properties.id;
+      const selectedRows = this.grid?.getSelectedRecords() ?? [];
+      if (toolbarItem == "system") {
+        this.grid?.toolbarModule.enableItems(["system"], false);
+        this.grid?.selectionModule.clearRowSelection();
+        this.systemDataClicked.emit();
+      } else if (toolbarItem == "refresh") {
+        this.getGridData();
+      } else if (toolbarItem == "delete"
+        && selectedRows.length > 0
+        && selectedRows[0].hasOwnProperty("vmid")
+        && selectedRows[0].hasOwnProperty("name"))
+      {
+        // @ts-ignore
+        this.confirmDelete(selectedRows[0].vmid, selectedRows[0].name);
+      }
     }
+  }
+
+  rowSelected(event: any) {
+    if (event?.data?.creationStatus && event.data.creationStatus != "IN PROGRESS") {
+      this.grid?.toolbarModule.enableItems(["delete"], true);
+    }
+    this.grid?.toolbarModule.enableItems(["system"], true);
+    this.rowSelectedEvent.emit(event);
+  }
+
+  rowDeselected(event: any) {
+    this.rowDeselectedEvent.emit(event);
+    this.grid?.toolbarModule.enableItems(["delete"], false);
   }
 
   private confirmDelete(vmid: number, name: string) {

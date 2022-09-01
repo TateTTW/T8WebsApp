@@ -369,6 +369,16 @@ public class ServerService implements IServerService {
         return new JSONObject();
     }
 
+    /**
+     * Method for Admins to retrieve system data
+     *
+     * @return JSONObject representation of node data
+     */
+    @Override
+    public JSONObject getSystemData(ProxmoxUtil.TimeFrame timeFrame) {
+        return proxmoxUtil.getNodeData(timeFrame);
+    }
+
     private class ServerCreationException extends Exception {
         public ServerCreationException(Server server) {
             super("Error occurred during the creation of " + server.toString());
