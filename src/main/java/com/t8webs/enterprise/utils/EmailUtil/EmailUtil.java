@@ -3,6 +3,7 @@ package com.t8webs.enterprise.utils.EmailUtil;
 import com.t8webs.enterprise.T8WebsApplication;
 import com.t8webs.enterprise.dto.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 @Component
+@Profile("dev")
 public class EmailUtil implements IEmailUtil {
     @Autowired
     private JavaMailSender emailSender;
