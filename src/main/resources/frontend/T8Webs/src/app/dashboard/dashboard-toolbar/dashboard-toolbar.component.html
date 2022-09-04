@@ -7,7 +7,7 @@
   </h5>
   <div class="toolbar-menu-control">
     <div #loginAndOut id="loginAndOut">
-      <button *ngIf="!user" ejs-button (click)="login()"><i class="fa fa-google"></i> | Sign in</button>
+      <button *ngIf="!user" ejs-button (click)="login()"><i class="fab fa-google"></i> | Sign in</button>
       <button *ngIf="user" ejs-dropdownbutton (select)="userMenuSelect($event)" [items]="userMenuItems" [title]="user.name">
         <img class="userPic" referrerpolicy="no-referrer" [src]="user.picture"/>
       </button>

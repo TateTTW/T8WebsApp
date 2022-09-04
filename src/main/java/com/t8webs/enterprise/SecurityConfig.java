@@ -16,7 +16,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .disable()
                 .antMatcher("/**")
                 .authorizeRequests()
-                .antMatchers( "/", "/*.js", "/*.css", "/dashboard", "/assets/T8WEBSICON.png")
+                .antMatchers( "/", "/*.js", "/*.css", "/*.woff", "/*.woff2", "/dashboard", "/assets/T8WEBSICON.png")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
