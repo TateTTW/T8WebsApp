@@ -8,6 +8,7 @@ import com.t8webs.enterprise.dao.User.IUserDAO;
 import com.t8webs.enterprise.dto.Server;
 import com.t8webs.enterprise.dto.User;
 import com.t8webs.enterprise.service.IServerService;
+import com.t8webs.enterprise.utils.EmailUtil.IEmailUtil;
 import com.t8webs.enterprise.utils.ProxmoxUtil.ProxmoxUtil;
 import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,8 @@ public class T8WebsController {
     IServerService serverService;
     @Autowired
     IUserDAO userDAO;
+    @Autowired
+    IEmailUtil emailUtil;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -78,11 +81,12 @@ public class T8WebsController {
 
         User appUser = userDAO.getUserById(user.getAttribute("sub"));
 
-        if (appUser.getStatus() != User.Status.NONE) {
+        if (!appUser.isFound() || appUser.getStatus() != User.Status.NONE) {
             return new ResponseEntity(headers, HttpStatus.BAD_REQUEST);
         }
 
-        if (userDAO.requestAccess(user.getAttribute("sub"))) {
+        if (userDAO.requestAccess(appUser.getUserId())) {
+            emailUtil.notifyAccessRequest(appUser);
             return new ResponseEntity(headers, HttpStatus.OK);
         }
 

@@ -33,7 +33,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "userId: " + userId + " name: " + name + " email: " + email + " status: " + status;
+        return "User { userId: " + userId + ", name: " + name + ", email: " + email + ", status: " + status + " }";
     }
 
     public enum Status {

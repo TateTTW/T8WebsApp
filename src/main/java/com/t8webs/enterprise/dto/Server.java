@@ -34,7 +34,7 @@ public class Server {
 
     @Override
     public String toString() {
-        return "Server { vmid: " + vmid + " name: " + name + " creationStatus: " + creationStatus + " }";
+        return "Server { vmid: " + vmid + ", name: " + name + ", creationStatus: " + creationStatus + " }";
     }
 
     public enum CreationStatus {

@@ -45,7 +45,7 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
     }
   ];
 
-  public userMenuItems: ItemModel[] = [{text: 'Sign Out'}];
+  public userMenuItems: ButtonItemModel[] = [{text: 'Sign Out', iconCss: "fa fa-sign-out-alt"}];
 
   public menuFields: Object = {
     text: ['header', 'text', 'value'],
