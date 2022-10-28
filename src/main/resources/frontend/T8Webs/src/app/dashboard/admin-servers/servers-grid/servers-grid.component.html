@@ -1,18 +1,21 @@
-<ejs-grid id="grid" #grid
-          [dataSource]='data'
-          [allowGrouping]='true'
-          [groupSettings]='groupOptions'
-          [toolbar]='toolbar'
-          [editSettings]='editSettings'
-          (rowSelected)="rowSelected($event)"
-          (rowDeselected)="rowDeselected($event)"
-          (toolbarClick)="toolbarClick($event)"
-          height='100%'>
-  <e-columns>
-    <e-column field='creationStatus' headerText='Creation Status' width=15></e-column>
-    <e-column field='userId' headerText='User Id' width=150></e-column>
-    <e-column field='username' headerText='User' width=15></e-column>
-    <e-column field='vmid' headerText='Server Id' width=13></e-column>
-    <e-column field='name' headerText='Server Name' width=15></e-column>
-  </e-columns>
-</ejs-grid>
+<div class="e-panel-container">
+  <div class="e-panel-header centerAlign">Servers</div>
+  <ejs-grid id="grid" #grid
+            [dataSource]='data'
+            [allowGrouping]='true'
+            [groupSettings]='groupOptions'
+            [toolbar]='toolbar'
+            [editSettings]='editSettings'
+            (rowSelected)="rowSelected($event)"
+            (rowDeselected)="rowDeselected($event)"
+            (toolbarClick)="toolbarClick($event)"
+            height='100%'>
+    <e-columns>
+      <e-column field='creationStatus' headerText='Creation Status' width=15></e-column>
+      <e-column field='userId' headerText='User Id' width=150></e-column>
+      <e-column field='username' headerText='User' width=15></e-column>
+      <e-column field='vmid' headerText='Server Id' width=13></e-column>
+      <e-column field='name' headerText='Server Name' width=15></e-column>
+    </e-columns>
+  </ejs-grid>
+</div>
