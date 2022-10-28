@@ -1,16 +1,19 @@
-<div class="e-panel-content">
-  <ejs-chart [tooltip]='tooltip' [chartArea]='chartArea' align='center' [primaryXAxis]='primaryXAxis' [primaryYAxis]='primaryYAxis'>
-    <e-series-collection>
-      <e-series [dataSource]='cpuData'
-                [marker]='marker'
-                type='Area'
-                xName='x'
-                yName='y'
-                name='Usage'
-                opacity=0.5
-                width=2
-                border-color='transparent'>
-      </e-series>
-    </e-series-collection>
-  </ejs-chart>
+<div class="e-panel-container">
+  <div class="e-panel-header centerAlign">CPU Usage</div>
+  <div class="e-panel-content">
+    <ejs-chart [tooltip]='tooltip' [chartArea]='chartArea' align='center' [primaryXAxis]='primaryXAxis' [primaryYAxis]='primaryYAxis'>
+      <e-series-collection>
+        <e-series [dataSource]='cpuData'
+                  [marker]='marker'
+                  type='Area'
+                  xName='x'
+                  yName='y'
+                  name='Usage'
+                  opacity=0.5
+                  width=2
+                  border-color='transparent'>
+        </e-series>
+      </e-series-collection>
+    </ejs-chart>
+  </div>
 </div>

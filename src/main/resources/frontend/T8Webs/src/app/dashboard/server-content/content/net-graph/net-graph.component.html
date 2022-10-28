@@ -1,8 +1,11 @@
-<div class="e-panel-content">
-  <ejs-chart [tooltip]='tooltip' (axisLabelRender)="axisLabelRender($event)" [chartArea]='chartArea' align='center' [primaryXAxis]='primaryXAxis' [primaryYAxis]='primaryYAxis'>
-    <e-series-collection>
-      <e-series [dataSource]='netData.netIn' type='Area' xName='x' yName='y' [marker]='marker' name='Net In' opacity=0.5 width=2 border-color='transparent'></e-series>
-      <e-series [dataSource]='netData.netOut' type='Area' xName='x' yName='y' [marker]='marker' name='Net Out' opacity=0.5 width=2 border-color='transparent'></e-series>
-    </e-series-collection>
-  </ejs-chart>
+<div class="e-panel-container">
+  <div class="e-panel-header centerAlign">Network Traffic</div>
+  <div class="e-panel-content">
+    <ejs-chart [tooltip]='tooltip' (axisLabelRender)="axisLabelRender($event)" [chartArea]='chartArea' align='center' [primaryXAxis]='primaryXAxis' [primaryYAxis]='primaryYAxis'>
+      <e-series-collection>
+        <e-series [dataSource]='netData.netIn' type='Area' xName='x' yName='y' [marker]='marker' name='Net In' opacity=0.5 width=2 border-color='transparent'></e-series>
+        <e-series [dataSource]='netData.netOut' type='Area' xName='x' yName='y' [marker]='marker' name='Net Out' opacity=0.5 width=2 border-color='transparent'></e-series>
+      </e-series-collection>
+    </ejs-chart>
+  </div>
 </div>
