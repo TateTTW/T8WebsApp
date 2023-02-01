@@ -124,4 +124,8 @@ export class DashboardToolbarComponent implements OnInit, AfterViewChecked, OnCh
       vmid: this.selectedTreeNode.id
     });
   }
+
+  donate() {
+    window.open('https://www.paypal.com/donate/?business=JP2DAE46C7E2C&no_recurring=0&currency_code=USD');
+  }
 }

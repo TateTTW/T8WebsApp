@@ -12,6 +12,7 @@
         <img class="userPic" referrerpolicy="no-referrer" [src]="user.picture"/>
       </button>
     </div>
+    <button id="donateBtn" ejs-button isPrimary="true" (click)="donate()"><i class="fa fa-donate"></i> Support T8 Webs</button>
     <div id="editSubmenu">
       <button #editSubmenu ejs-dropdownbutton (select)="editSelect($event)" [items]="editMenuItems">
         <i class="fa fa-cog"></i>Edit
@@ -27,6 +28,7 @@
           <e-item prefixIcon="fa fa-sync-alt" text="Reboot" cssClass="item" [visible]="false"></e-item>
         <e-item type='Separator' cssClass="item" [visible]="false"></e-item>
           <e-item template='#editSubmenu' cssClass="item" [visible]="false"></e-item>
+        <e-item template='#donateBtn' align="Right" cssClass="persist"></e-item>
         <e-item template='#loginAndOut' align="Right" cssClass="persist"></e-item>
       </e-items>
     </ejs-toolbar>
